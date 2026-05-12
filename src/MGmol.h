@@ -10,6 +10,8 @@
 #ifndef MGMOL_H
 #define MGMOL_H
 
+#include "mgmol_config.h"
+
 #include "Energy.h"
 #include "GridFuncVector.h"
 #include "Hamiltonian.h"
@@ -42,6 +44,7 @@ class IonicAlgorithm;
 #include "AOMMprojector.h"
 #include "ClusterOrbitals.h"
 #include "DMStrategy.h"
+#include "Energy.h"
 #include "ExtendedGridOrbitals.h"
 #include "Forces.h"
 #include "Ions.h"
@@ -181,6 +184,7 @@ public:
         return hamiltonian_;
     }
     std::shared_ptr<Rho<OrbitalsType>> getRho() { return rho_; }
+    std::shared_ptr<Ions> getIons() { return ions_; }
 
     void run() override;
 
@@ -331,6 +335,11 @@ public:
     {
         forces_->force(orbitals, ions);
     }
+    void setPositions(const std::vector<double>& positions,
+        const std::vector<short>& atnumbers)
+    {
+        ions_->setPositions(positions, atnumbers);
+    }
 
     /*
      * simply dump current state
@@ -343,6 +352,13 @@ public:
     {
         return proj_matrices_;
     }
+
+#ifdef MGMOL_HAS_LIBROM
+    int save_orbital_snapshot(std::string file_path, OrbitalsType& orbitals);
+    void project_orbital(
+        std::string file_path, int rdim, OrbitalsType& orbitals);
+#endif
+    void updateDMandEnergy(OrbitalsType& orbitals, Ions& ions, double& eks);
 };
 // Instantiate static variables here to avoid clang warnings
 template <class OrbitalsType>

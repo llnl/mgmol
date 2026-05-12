@@ -321,6 +321,9 @@ add_executable(testDMandEnergyAndForces
                ${CMAKE_SOURCE_DIR}/tests/DMandEnergyAndForces/testDMandEnergyAndForces.cc)
 add_executable(testRestartEnergyAndForces
                ${CMAKE_SOURCE_DIR}/tests/RestartEnergyAndForces/testRestartEnergyAndForces.cc)
+add_executable(testPinnedH2O_3DOF
+               ${CMAKE_SOURCE_DIR}/tests/PinnedH2O_3DOF/testPinnedH2O_3DOF.cc
+               ${CMAKE_SOURCE_DIR}/src/tools/PinnedH2O.cc)
 
 if(${MAGMA_FOUND})
   add_executable(testOpenmpOffload
@@ -453,6 +456,14 @@ add_test(NAME testRestartEnergyAndForces
          ${CMAKE_CURRENT_SOURCE_DIR}/RestartEnergyAndForces/mgmol.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/RestartEnergyAndForces/restart.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/RestartEnergyAndForces/h2o.xyz
+         ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
+add_test(NAME testPinnedH2O_3DOF
+         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/PinnedH2O_3DOF/test.py
+         ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
+         ${CMAKE_CURRENT_BINARY_DIR}/testPinnedH2O_3DOF
+         ${CMAKE_CURRENT_SOURCE_DIR}/PinnedH2O_3DOF/mgmol.cfg
+         ${CMAKE_CURRENT_SOURCE_DIR}/PinnedH2O_3DOF/coords.in
+         ${CMAKE_CURRENT_SOURCE_DIR}/PinnedH2O_3DOF/lrs.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testRhoVhRestart
          COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/RhoVhRestart/test.py
@@ -777,6 +788,7 @@ target_link_libraries(testEnergyAndForces PRIVATE mgmol_src)
 target_link_libraries(testWFEnergyAndForces PRIVATE mgmol_src)
 target_link_libraries(testDMandEnergyAndForces PRIVATE mgmol_src)
 target_link_libraries(testRestartEnergyAndForces PRIVATE mgmol_src)
+target_link_libraries(testPinnedH2O_3DOF PRIVATE mgmol_src)
 target_link_libraries(testIons PRIVATE mgmol_src)
 target_link_libraries(testRhoVhRestart mgmol_src)
 

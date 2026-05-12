@@ -41,6 +41,9 @@ public:
 
     virtual void getAtomicPositions(std::vector<double>& tau) = 0;
     virtual void getAtomicNumbers(std::vector<short>& an)     = 0;
+    virtual void setPositions(const std::vector<double>& positions,
+        const std::vector<short>& atnumbers)
+        = 0;
     virtual std::shared_ptr<ProjectedMatricesInterface> getProjectedMatrices()
         = 0;
     virtual void dumpRestart() = 0;

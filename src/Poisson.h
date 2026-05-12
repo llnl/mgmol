@@ -88,6 +88,14 @@ public:
         Int_vhrho_       = vel * vh_->gdot(rho);
         Int_vhrhoc_      = vel * vh_->gdot(rhoc);
     }
+
+    virtual void applyOperator(
+        pb::GridFunc<POTDTYPE>& vh, pb::GridFunc<POTDTYPE>& lhs)
+    {
+        std::cerr << "ERROR: Abstract method Poisson::applyOperator()"
+                  << std::endl;
+        MPI_Abort(MPI_COMM_WORLD, 0);
+    }
 };
 
 #endif

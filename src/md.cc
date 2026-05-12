@@ -34,6 +34,12 @@
 #include "mgmol_Signal.h"
 #include "tools.h"
 
+#ifdef MGMOL_HAS_LIBROM
+#include "KBPsiMatrixSparse.h"
+#include "PinnedH2O.h"
+#include "rom_workflows.h"
+#endif
+
 #include <sstream>
 #include <string>
 #include <vector>
@@ -43,6 +49,7 @@ Timer md_tau_tm("md_tau");
 Timer md_moveVnuc_tm("md_moveVnuc");
 Timer md_updateMasks_tm("md_updateMasks");
 Timer md_extrapolateOrbitals_tm("md_extrapolateOrbitals");
+Timer md_updateDMandEnergy_tm("md_updateDMandEnergy");
 
 #define DUMP_MAX_NUM_TRY 5
 
@@ -369,8 +376,29 @@ void MGmol<OrbitalsType>::md(OrbitalsType** orbitals, Ions& ions)
         h5f_file_.reset();
     }
 
+    bool ROM_MVP
+        = (ct.getROMOptions().rom_stage == ROMStage::ONLINE_PINNED_H2O_3DOF);
+#ifdef MGMOL_HAS_LIBROM
+    // ROM - initialize orbitals and density matrix
+    if (ROM_MVP)
+    {
+        if (onpe0) os_ << "Setup ROM MVP solver..." << std::endl;
+        ExtendedGridOrbitals<ORBDTYPE>** extended_orbitals
+            = reinterpret_cast<ExtendedGridOrbitals<ORBDTYPE>**>(orbitals);
+        (*extended_orbitals)->set(ct.getROMOptions().basis_file, ct.numst);
+        (*extended_orbitals)->orthonormalizeLoewdin();
+        (*extended_orbitals)->setDataWithGhosts(true);
+        (*extended_orbitals)->setIterativeIndex(10);
+
+        std::shared_ptr<ProjectedMatricesInterface> projmatrices
+            = getProjectedMatrices();
+        projmatrices->setDMuniform(ct.getNelSpin());
+        projmatrices->printDM(os_);
+    }
+#endif
+
     // additional SC steps to compensate random start
-    if (ct.restart_info < 3)
+    if (ct.restart_info < 3 && !ROM_MVP)
     {
         double eks = 0.;
         quench(**orbitals, ions, ct.max_electronic_steps, 20, eks);
@@ -380,6 +408,9 @@ void MGmol<OrbitalsType>::md(OrbitalsType** orbitals, Ions& ions)
 
     bool extrapolated_flag = true;
     if (ct.dt <= 0.) extrapolated_flag = false;
+
+    int librom_snapshot_freq = ct.getROMOptions().librom_snapshot_freq;
+    if (librom_snapshot_freq == -1) librom_snapshot_freq = ct.md_print_freq;
 
     MDfiles md_files;
 
@@ -399,10 +430,48 @@ void MGmol<OrbitalsType>::md(OrbitalsType** orbitals, Ions& ions)
         int retval              = 0;
         bool small_move         = true;
         bool last_move_is_small = true;
-        do
+
+        bool force_on_ions = true;
+#ifdef MGMOL_HAS_LIBROM
+        // Ions for ROM
+        Mesh* mymesh            = Mesh::instance();
+        const pb::Grid& mygrid  = mymesh->grid();
+        const double lattice[3] = { mygrid.ll(0), mygrid.ll(1), mygrid.ll(2) };
+        std::vector<double> positions;
+        std::vector<short> anumbers;
+        getAtomicPositions(positions);
+        getAtomicNumbers(anumbers);
+        Ions* ROM_ions;
+
+        // Pinned H2O 3 DOF
+        PinnedH2O H2O_molecule;
+        if (ct.getROMOptions().rom_stage == ROMStage::ONLINE_PINNED_H2O_3DOF)
+        {
+            if (onpe0)
+                os_ << "Rotate Pinned H2O molecule in timestep " << mdstep
+                    << std::endl;
+            H2O_molecule.rotate(positions, anumbers);
+            if (onpe0) H2O_molecule.print(os_);
+            ROM_ions
+                = new Ions(positions, anumbers, lattice, ions_->getSpecies());
+            setupPotentials(*ROM_ions);
+            force_on_ions = false;
+        }
+#endif
+
+        if (ROM_MVP)
+        {
+            md_updateDMandEnergy_tm.start();
+            updateDMandEnergy(**orbitals, *ROM_ions, eks);
+            md_updateDMandEnergy_tm.stop();
+        }
+        else
         {
             retval = quench(**orbitals, ions, ct.max_electronic_steps, 0, eks);
+        }
 
+        do
+        {
             // update localization regions
             if (ct.adaptiveLRs())
             {
@@ -467,7 +536,63 @@ void MGmol<OrbitalsType>::md(OrbitalsType** orbitals, Ions& ions)
                 << std::endl;
 
         // Compute forces
-        force(**orbitals, ions);
+        if (force_on_ions) force(**orbitals, ions);
+
+#ifdef MGMOL_HAS_LIBROM
+        if (ct.getROMOptions().rom_stage == ROMStage::ONLINE_PINNED_H2O_3DOF)
+        {
+            force(**orbitals, *ROM_ions);
+            // Pinned H2O 3 DOF
+            if (onpe0)
+                os_ << "Transpose rotate the PinnedH2O molecule" << std::endl;
+            std::vector<double> forces;
+            ROM_ions->getForces(forces);
+            H2O_molecule.transpose_rotate(positions, anumbers, forces);
+            ions.setLocalForces(forces, positions);
+            delete ROM_ions;
+        }
+
+        if (ct.getROMOptions().rom_stage == ROMStage::TEST_ORBITAL)
+        {
+            if (onpe0)
+            {
+                os_ << "Projecting orbitals onto ROM subspaces to compare "
+                    << ((ct.getROMOptions().compare_md) ? "MD dynamics"
+                                                        : "force")
+                    << std::endl;
+                os_ << "Loading ROM basis " << ct.getROMOptions().basis_file
+                    << std::endl;
+                os_ << "ROM basis dimension = "
+                    << ct.getROMOptions().num_orbbasis << std::endl;
+            }
+
+            // Project orbitals to ROM subspace
+            project_orbital(ct.getROMOptions().basis_file,
+                ct.getROMOptions().num_orbbasis, **orbitals);
+            if (ct.getROMOptions().compare_md)
+            {
+                // overwrite ions force for MD time stepping
+                force(**orbitals, ions);
+            }
+            else
+            {
+                // write ROM_ions force for one-step comparison
+                ROM_ions = new Ions(
+                    positions, anumbers, lattice, ions_->getSpecies());
+                force(**orbitals, *ROM_ions);
+                std::string zero = "0";
+                if (ions_->getNumIons() < 256 || ct.verbose > 2)
+                {
+                    if (ct.verbose > 0) ROM_ions->printForcesGlobal(os_);
+                }
+                else if (zero.compare(ct.md_print_filename) == 0)
+                {
+                    ROM_ions->printForcesLocal(os_);
+                }
+                delete ROM_ions;
+            }
+        }
+#endif
 
         // set fion
         ions.getLocalForces(fion);
@@ -614,6 +739,21 @@ void MGmol<OrbitalsType>::md(OrbitalsType** orbitals, Ions& ions)
 
                     printWithTimeStamp("dumped restart file...", std::cout);
                 }
+
+#ifdef MGMOL_HAS_LIBROM
+        // Save orbital snapshots
+        if (ct.getROMOptions().save_librom_snapshot > 0
+            && md_iteration_ % librom_snapshot_freq == 0)
+        {
+            int ierr = save_orbital_snapshot(
+                ct.md_print_filename + "_mdstep" + std::to_string(mdstep),
+                **orbitals);
+
+            if (ierr < 0)
+                os_ << "WARNING md(): writing ROM snapshot data failed!!!"
+                    << std::endl;
+        }
+#endif
 
         md_iterations_tm.stop();
 

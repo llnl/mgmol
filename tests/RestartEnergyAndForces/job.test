@@ -1,0 +1,28 @@
+#!/bin/tcsh
+#SBATCH -N 2
+#SBATCH -t 1:00:00
+#SBATCH -p pbatch
+
+date
+
+setenv OMP_NUM_THREADS 1
+#setenv KMP_DETERMINISTIC_REDUCTION 1
+
+set ncpus = 2
+
+set maindir = /p/lustre2/cheung26/mgmol-20241220
+
+setenv LD_LIBRARY_PATH ${maindir}/build_quartz/libROM/build/lib:$LD_LIBRARY_PATH
+
+set exe     = testRestartEnergyAndForces
+
+cp $maindir/build_quartz/tests/$exe .
+
+ln -s -f $maindir/potentials/pseudo.O_ONCV_PBE_SG15 .
+ln -s -f $maindir/potentials/pseudo.H_ONCV_PBE_SG15 .
+
+source $maindir/scripts/modules.quartz
+
+python3 test.py srun -n $ncpus ${maindir}/install_quartz/bin/mgmol-opt ${exe} mgmol.cfg restart.cfg h2o.xyz .
+
+date

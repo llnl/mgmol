@@ -11,8 +11,10 @@
 #define MGMOL_PROTOTYPES_H
 
 #include "global.h"
+#include "mgmol_config.h"
 
 #include <boost/program_options.hpp>
+namespace po = boost::program_options;
 
 class Ions;
 class KBPsiMatrixSparse;
@@ -24,4 +26,8 @@ int read_config(int argc, char** argv,
     boost::program_options::variables_map& vm, std::string& input_file,
     std::string& lrs_filename, std::string& constraints_filename,
     float& total_spin, bool& with_spin);
+#ifdef MGMOL_HAS_LIBROM
+void setupROMConfigOption(po::options_description& rom_cfg);
+#endif
+
 #endif
