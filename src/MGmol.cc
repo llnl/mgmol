@@ -110,6 +110,7 @@ extern Timer md_moveVnuc_tm;
 extern Timer md_updateMasks_tm;
 extern Timer md_extrapolateOrbitals_tm;
 extern Timer md_updateRhoAndPot_tm;
+extern Timer md_updateDMandEnergy_tm;
 extern Timer quench_tm;
 extern Timer ions_setupInteractingIons_tm;
 extern Timer ions_setup_tm;
@@ -971,6 +972,7 @@ void MGmol<OrbitalsType>::printTimers()
     init_nuc_tm_.print(os_);
     md_updateMasks_tm.print(os_);
     md_extrapolateOrbitals_tm.print(os_);
+    md_updateDMandEnergy_tm.print(os_);
     quench_tm.print(os_);
     evnl_tm_.print(os_);
     ions_setupInteractingIons_tm.print(os_);
@@ -1173,6 +1175,19 @@ void MGmol<OrbitalsType>::dumpRestart()
 
         if (ierr < 0)
             os_ << "WARNING: writing restart data failed!!!" << std::endl;
+
+#ifdef MGMOL_HAS_LIBROM
+        // Save orbital snapshots
+        if (ct.getROMOptions().save_librom_snapshot > 0
+            && ct.AtomsDynamic() == AtomsDynamicType::Quench)
+        {
+            ierr = save_orbital_snapshot(filename, *current_orbitals_);
+
+            if (ierr < 0)
+                os_ << "WARNING: writing ROM snapshot data failed!!!"
+                    << std::endl;
+        }
+#endif
     }
 }
 
@@ -1483,6 +1498,35 @@ template <class OrbitalsType>
 void MGmol<OrbitalsType>::getAtomicNumbers(std::vector<short>& an)
 {
     ions_->getAtomicNumbers(an);
+}
+
+template <class OrbitalsType>
+void MGmol<OrbitalsType>::updateDMandEnergy(
+    OrbitalsType& orbitals, Ions& ions, double& eks)
+{
+    // initialize electronic density
+    rho_->update(orbitals);
+
+    // initialize potential
+    update_pot(ions);
+
+    // initialize projected matrices
+    updateHmatrix(orbitals, ions);
+    proj_matrices_->updateThetaAndHB();
+
+    // compute DM
+    std::shared_ptr<DMStrategy<OrbitalsType>> dm_strategy(
+        DMStrategyFactory<OrbitalsType,
+            dist_matrix::DistMatrix<double>>::create(comm_, os_, ions,
+            rho_.get(), energy_.get(), electrostat_.get(), hamiltonian_.get(),
+            this, proj_matrices_.get(), &orbitals));
+
+    dm_strategy->update(orbitals);
+
+    // evaluate energy and forces
+    double ts = 0.;
+    eks       = energy_->evaluateTotal(
+        ts, proj_matrices_.get(), ions, orbitals, 2, os_);
 }
 
 template <class OrbitalsType>

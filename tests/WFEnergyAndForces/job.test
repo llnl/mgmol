@@ -1,0 +1,27 @@
+#!/bin/tcsh
+#SBATCH -N 2
+#SBATCH -t 1:00:00
+#SBATCH -p pbatch
+
+date
+
+setenv OMP_NUM_THREADS 1
+#setenv KMP_DETERMINISTIC_REDUCTION 1
+
+set ncpus = 2
+
+set maindir = /p/lustre2/cheung26/mgmol-20241220
+
+setenv LD_LIBRARY_PATH ${maindir}/build_quartz/libROM/build/lib:$LD_LIBRARY_PATH
+
+set exe     = testWFEnergyAndForces
+
+cp $maindir/build_quartz/tests/$exe .
+
+set cfg_online = mgmol.cfg
+
+source $maindir/scripts/modules.quartz
+
+python3 test.py srun -p pdebug -n $ncpus $exe $cfg_online sih4.xyz $maindir/potentials
+
+date

@@ -71,6 +71,8 @@ public:
     Rho();
     ~Rho() {};
 
+    const OrthoType getOrthoType() { return orbitals_type_; }
+
     void setup(
         const OrthoType orbitals_type, const std::vector<std::vector<int>>&);
     void setVerbosityLevel(const int vlevel) { verbosity_level_ = vlevel; }
