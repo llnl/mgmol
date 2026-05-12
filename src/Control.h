@@ -13,6 +13,10 @@
 #include "Species.h"
 #include "Timeout.h"
 
+/* enumeration and option variables for libROM */
+#include "mgmol_config.h"
+#include "rom_Control.h"
+
 #include <cassert>
 #include <fstream>
 #include <iostream>
@@ -219,6 +223,9 @@ private:
     Control(const Control& ct) { (void)ct; };
 
     void printRestartLink();
+
+    /* libROM related options */
+    ROMPrivateOptions rom_pri_option;
 
 public:
     static Control* instance()
@@ -750,6 +757,11 @@ public:
     }
 
     bool AtomsMove() { return (atoms_dyn_ != 0); }
+
+    /* ROM-related options */
+    void setROMOptions(const boost::program_options::variables_map& vm);
+    void syncROMOptions();
+    const ROMPrivateOptions getROMOptions() { return rom_pri_option; }
 };
 
 #endif

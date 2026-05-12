@@ -1,0 +1,32 @@
+#!/bin/tcsh
+#SBATCH -N 1
+#SBATCH -t 0:10:00
+#SBATCH -p pdebug
+
+date
+
+setenv OMP_NUM_THREADS 1
+#setenv KMP_DETERMINISTIC_REDUCTION 1
+
+set ncpus = 1
+
+set maindir = /p/lustre2/cheung26/mgmol
+
+setenv LD_LIBRARY_PATH ${maindir}/build_quartz/libROM/build/lib:$LD_LIBRARY_PATH
+
+set exe     = ${maindir}/build_quartz/libROM/build/examples/misc/combine_samples
+
+set snapshot_files = ""
+set increment_md_steps = 1
+set num_md_steps = 50
+
+foreach k (`seq $increment_md_steps $increment_md_steps $num_md_steps`)
+    set snapshot_files = "$snapshot_files MD_mdstep${k}_snapshot"
+end
+echo "Snapshot files: $snapshot_files"
+
+set basis_file = "PinnedH2O_orbitals_basis_${increment_md_steps}_${num_md_steps}"
+
+srun -n $ncpus $exe -f $basis_file $snapshot_files > basis_${increment_md_steps}_${num_md_steps}_PinnedH2O.out
+
+date
