@@ -222,7 +222,12 @@ public:
         return a.x_[0] * a.x_[0] + a.x_[1] * a.x_[1] + a.x_[2] * a.x_[2];
     }
 
-    friend Vector3D normalized(const Vector3D& a) { return a / length(a); }
+    friend Vector3D normalized(const Vector3D& a) 
+    { 
+        double len = length(a);
+        assert(len != 0); // should we care about near zero vectors here? - DOK
+        return a / len; 
+    }
 
     friend std::ostream& operator<<(std::ostream& os, const Vector3D& v)
     {
