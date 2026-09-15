@@ -200,6 +200,8 @@ void Ions::setup()
 
     ions_setup_tm.start();
 
+    Ion::resetIndexCount();
+
     updateListIons();
 
     // #ifndef NDEBUG
