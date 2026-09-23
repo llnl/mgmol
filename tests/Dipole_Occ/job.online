@@ -1,0 +1,97 @@
+#!/bin/tcsh
+#SBATCH -N 8
+#SBATCH -t 1:00:00
+#SBATCH -p pdebug
+
+date
+
+setenv OMP_NUM_THREADS 1
+#setenv KMP_DETERMINISTIC_REDUCTION 1
+
+set ncpus = 8
+
+set maindir = /p/lustre2/cheung26/mgmol
+
+setenv LD_LIBRARY_PATH ${maindir}/build_quartz/libROM/build/lib:$LD_LIBRARY_PATH
+
+ln -s -f $maindir/potentials/pseudo.O_ONCV_PBE_SG15 .
+ln -s -f $maindir/potentials/pseudo.H_ONCV_PBE_SG15 .
+
+source $maindir/scripts/modules.quartz
+
+set coord_file = h2o.in
+
+set basis_path = /p/lustre2/cheung26/dipole_0916/data_8/dipole_efield_occ6_orbitals_basis_0.00000_0.00010_1
+set rdim = 6
+
+set nocc = 4
+@ ne = $rdim - $nocc
+
+set nfocc = 6
+set occ = "1., 1., 1., 0.5, 0.25, 0.25"
+@ nz = $rdim - $nfocc
+set i = 1
+while ($i <= $nz)
+    set occ = "$occ, 0."
+    @ i++
+end
+echo "ne = $ne"
+echo "nz = $nz"
+echo "occ = $occ"
+echo "basis_path = $basis_path"
+
+set exe     = mgmol-opt
+cp $maindir/install_quartz/bin/$exe .
+
+set ex = 0.00000
+set ey = 0.00000
+set ez = 0.00000
+set tag = ${rdim}_${ex}_${ey}_${ez}
+
+set cfg_init = efield_${tag}_init.cfg
+cp efield_init.cfg ${cfg_init}
+sed -i "s/NCPUS/${ncpus}/g" ${cfg_init}
+sed -i "s/EX_VAL/${ex}/g" ${cfg_init}
+sed -i "s/EY_VAL/${ey}/g" ${cfg_init}
+sed -i "s/EZ_VAL/${ez}/g" ${cfg_init}
+sed -i "s/NE/${ne}/g" ${cfg_init}
+
+echo "Running ${exe} with ${cfg_init}"
+srun -p pdebug -n $ncpus $exe -c $cfg_init -i $coord_file > init_results_${tag}.out
+
+set ex = 0.00005
+set ey = 0.00005
+set ez = 0.00005
+set tag = ${rdim}_${ex}_${ey}_${ez}
+
+set cfg_ref = efield_${tag}_ref.cfg
+cp efield_ref.cfg ${cfg_ref}
+sed -i "s/NCPUS/${ncpus}/g" ${cfg_ref}
+sed -i "s/EX_VAL/${ex}/g" ${cfg_ref}
+sed -i "s/EY_VAL/${ey}/g" ${cfg_ref}
+sed -i "s/EZ_VAL/${ez}/g" ${cfg_ref}
+sed -i "s/OCC/${occ}/g" ${cfg_ref}
+sed -i "s/NE/${ne}/g" ${cfg_ref}
+
+set cfg_ref = efield_222110_offline.cfg
+echo "Running ${exe} with ${cfg_ref}"
+srun -p pdebug -n $ncpus $exe -c $cfg_ref -i $coord_file > ref_results_${tag}.out
+
+set exe     = testDipole_Occ
+cp $maindir/build_quartz/tests/$exe .
+
+set cfg_online = efield_${tag}_online.cfg
+cp efield_online.cfg ${cfg_online}
+sed -i "s/NCPUS/${ncpus}/g" ${cfg_online}
+sed -i "s/EX_VAL/${ex}/g" ${cfg_online}
+sed -i "s/EY_VAL/${ey}/g" ${cfg_online}
+sed -i "s/EZ_VAL/${ez}/g" ${cfg_online}
+sed -i "s/OCC/${occ}/g" ${cfg_online}
+sed -i "s/NE/${ne}/g" ${cfg_online}
+sed -i "s#BASIS_PATH#${basis_path}#g" ${cfg_online}
+sed -i "s/NB/${rdim}/g" ${cfg_online}
+
+echo "Running ${exe} with ${cfg_online}"
+srun -p pdebug -n $ncpus $exe -c ${cfg_online} -i $coord_file > online_results_${tag}.out
+
+date
