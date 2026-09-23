@@ -324,6 +324,8 @@ add_executable(testRestartEnergyAndForces
 add_executable(testPinnedH2O_3DOF
                ${CMAKE_SOURCE_DIR}/tests/PinnedH2O_3DOF/testPinnedH2O_3DOF.cc
                ${CMAKE_SOURCE_DIR}/src/tools/PinnedH2O.cc)
+add_executable(testDipole_Occ
+               ${CMAKE_SOURCE_DIR}/tests/Dipole_Occ/testDipole_Occ.cc)
 
 if(${MAGMA_FOUND})
   add_executable(testOpenmpOffload
@@ -789,6 +791,7 @@ target_link_libraries(testWFEnergyAndForces PRIVATE mgmol_src)
 target_link_libraries(testDMandEnergyAndForces PRIVATE mgmol_src)
 target_link_libraries(testRestartEnergyAndForces PRIVATE mgmol_src)
 target_link_libraries(testPinnedH2O_3DOF PRIVATE mgmol_src)
+target_link_libraries(testDipole_Occ PRIVATE mgmol_src)
 target_link_libraries(testIons PRIVATE mgmol_src)
 target_link_libraries(testRhoVhRestart mgmol_src)
 
