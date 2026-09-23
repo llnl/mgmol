@@ -40,24 +40,17 @@ int main(int argc, char** argv)
 
     MPI_Comm comm = MPI_COMM_WORLD;
 
-    /*
-     * Initialize general things, like magma, openmp, IO, ...
-     */
     mgmol_init(comm);
 
-    /*
-     * Read runtime parameters
-     */
     std::string input_filename("");
     std::string lrs_filename;
     std::string constraints_filename("");
 
     float total_spin = 0.;
-    bool with_spin   = false;
+    bool with_spin = false;
 
     po::variables_map vm;
 
-    // Read from PE0 only
     if (MPIdata::onpe0)
     {
         read_config(argc, argv, vm, input_filename, lrs_filename,
@@ -65,12 +58,9 @@ int main(int argc, char** argv)
     }
 
     MGmol_MPI::setup(comm, std::cout, with_spin);
-    MGmol_MPI& mmpi      = *(MGmol_MPI::instance());
+    MGmol_MPI& mmpi = *(MGmol_MPI::instance());
     MPI_Comm global_comm = mmpi.commGlobal();
 
-    /*
-     * Setup control struct with runtime parameters
-     */
     Control::setup(global_comm, with_spin, total_spin);
     Control& ct = *(Control::instance());
 
@@ -82,7 +72,6 @@ int main(int argc, char** argv)
     mmpi.bcastGlobal(input_filename);
     mmpi.bcastGlobal(lrs_filename);
 
-    // Enter main scope
     {
         if (MPIdata::onpe0)
         {
@@ -93,10 +82,7 @@ int main(int argc, char** argv)
 
         MGmolInterface* mgmol =
             new MGmol<ExtendedGridOrbitals<ORBDTYPE>>(
-                global_comm,
-                *MPIdata::sout,
-                input_filename,
-                lrs_filename,
+                global_comm, *MPIdata::sout, input_filename, lrs_filename,
                 constraints_filename);
 
         if (MPIdata::onpe0)
@@ -115,12 +101,6 @@ int main(int argc, char** argv)
             std::cout << "-------------------------" << std::endl;
         }
 
-        /*
-         * Get atomic positions and atomic numbers from MGmol.
-         *
-         * Unlike the original script, the coordinates are NOT
-         * rotated into a reference coordinate system.
-         */
         std::vector<double> positions;
         mgmol->getAtomicPositions(positions);
 
@@ -130,12 +110,10 @@ int main(int argc, char** argv)
         if (MPIdata::onpe0)
         {
             std::cout << "Positions:" << std::endl;
-
             std::vector<short>::iterator ita = anumbers.begin();
 
             for (std::vector<double>::iterator it = positions.begin();
-                 it != positions.end();
-                 it += 3)
+                 it != positions.end(); it += 3)
             {
                 std::cout << *ita;
 
@@ -147,143 +125,85 @@ int main(int argc, char** argv)
             }
         }
 
-        /*
-         * Set up the mesh and projected matrices.
-         */
-        Mesh* mymesh             = Mesh::instance();
-        const pb::Grid& mygrid   = mymesh->grid();
+        Mesh* mymesh = Mesh::instance();
+        const pb::Grid& mygrid = mymesh->grid();
         const pb::PEenv& myPEenv = mymesh->peenv();
 
-        /*
-         * Check that the ROM basis dimension agrees with
-         * the number of states expected by MGmol.
-         */
         const int rdim = ct.getROMOptions().num_orbbasis;
 
         if (rdim != ct.numst)
         {
-            std::cerr
-                << "The number of functions in the ROM basis file, "
-                << rdim
-                << " is not equal to ct.numst, "
-                << ct.numst
-                << std::endl;
-
+            std::cerr << "The number of functions in the ROM basis file, "
+                      << rdim << " is not equal to ct.numst, " << ct.numst
+                      << std::endl;
             MPI_Abort(mmpi.commSameSpin(), 0);
         }
 
-        /*
-         * Obtain the projected-matrix interface from MGmol.
-         */
         std::shared_ptr<ProjectedMatricesInterface> projmatrices =
             mgmol->getProjectedMatrices();
 
-        /*
-         * Construct the orbital object that will hold the ROM basis.
-         */
-        ExtendedGridOrbitals<ORBDTYPE> orbitals(
-            "new_orbitals",
-            mygrid,
-            mymesh->subdivx(),
-            ct.numst,
-            ct.bcWF,
-            projmatrices.get(),
-            nullptr,
-            nullptr,
-            nullptr,
-            nullptr);
+        ExtendedGridOrbitals<ORBDTYPE> orbitals("new_orbitals", mygrid,
+            mymesh->subdivx(), ct.numst, ct.bcWF, projmatrices.get(), nullptr,
+            nullptr, nullptr, nullptr);
 
-        /*
-         * Load the precomputed ROM basis.
-         */
-        orbitals.set(
-            ct.getROMOptions().basis_file,
-            ct.numst);
+        HDFrestart h5file(ct.restart_file, myPEenv, ct.restart_file_type);
+        orbitals.read_hdf5(h5file);
 
-        /*
-         * Orthonormalize the ROM basis using Löwdin
-         * orthogonalization.
-         */
-        orbitals.orthonormalizeLoewdin();
+        //
+        // evaluate energy and forces again, with wavefunctions
+        // frozen to solution of previous problem
+        //
 
-        /*
-         * Include ghost-point data for the orbitals.
-         */
-        orbitals.setDataWithGhosts(true);
-
-        /*
-         * Set the iterative index to distinguish this orbital
-         * object from the one created during MGmol initialization.
-         */
-        orbitals.setIterativeIndex(10);
-
-        /*
-         * Initialize the density matrix with uniform occupations.
-         */
+        // reset initial DM to test iterative solve for it
         projmatrices->setDMuniform(ct.getNelSpin());
-        projmatrices->printDM(std::cout);
-
-        /*
-         * Evaluate the electronic structure, energy, and forces
-         * using the ROM basis.
-         *
-         * Since no coordinate transformation has been applied,
-         * the returned forces are already in the original/input
-         * coordinate system.
-         */
+        ct.dm_inner_steps = 50;
         std::vector<double> forces;
 
         double eks = mgmol->evaluateDMandEnergyAndForces(
-            &orbitals,
-            positions,
-            anumbers,
-            forces);
+            &orbitals, positions, anumbers, forces);
 
-        /*
-         * Print results.
-         */
+        // print out results
         if (MPIdata::onpe0)
         {
-            std::cout << "Eks: " << eks << std::endl;
-
-            std::cout << "Positions:" << std::endl;
-
-            std::vector<short>::iterator ita = anumbers.begin();
-
-            for (std::vector<double>::iterator it = positions.begin();
-                 it != positions.end();
-                 it += 3)
-            {
-                std::cout << *ita;
-
-                for (int i = 0; i < 3; i++)
-                    std::cout << "    " << *(it + i);
-
-                std::cout << std::endl;
-                ita++;
-            }
-
-            std::cout << "Forces:" << std::endl;
-
-            ita = anumbers.begin();
-
+            std::cout << "Eks1 : " << eks << std::endl;
+            std::cout << "Forces1 :" << std::endl;
             for (std::vector<double>::iterator it = forces.begin();
-                 it != forces.end();
-                 it += 3)
+                 it != forces.end(); it += 3)
             {
-                std::cout << *ita;
-
                 for (int i = 0; i < 3; i++)
                     std::cout << "    " << *(it + i);
-
                 std::cout << std::endl;
-                ita++;
+            }
+        }
+
+        orbitals.set(ct.getROMOptions().basis_file, ct.numst);
+        orbitals.orthonormalizeLoewdin();
+        orbitals.setDataWithGhosts(true);
+
+        orbitals.setIterativeIndex(10);
+
+        projmatrices->setDMuniform(ct.getNelSpin());
+        projmatrices->printDM(std::cout);
+
+        eks = mgmol->evaluateDMandEnergyAndForces(
+            &orbitals, positions, anumbers, forces);
+
+        if (MPIdata::onpe0)
+        {
+            std::cout << "Eks2: " << eks << std::endl;
+            std::cout << "Forces2 :" << std::endl;
+            for (std::vector<double>::iterator it = forces.begin();
+                 it != forces.end(); it += 3)
+            {
+                for (int i = 0; i < 3; i++)
+                    std::cout << "    " << *(it + i);
+                std::cout << std::endl;
             }
         }
 
         delete mgmol;
 
-    } // close main scope
+    }
 
     mgmol_finalize();
 
@@ -302,5 +222,4 @@ int main(int argc, char** argv)
 
     return 0;
 }
-
-#endif // MGMOL_HAS_LIBROM
+#endif
