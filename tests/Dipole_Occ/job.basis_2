@@ -1,0 +1,59 @@
+#!/bin/tcsh
+#SBATCH -N 8
+#SBATCH -t 0:10:00
+#SBATCH -p pdebug
+
+date
+
+setenv OMP_NUM_THREADS 1
+#setenv KMP_DETERMINISTIC_REDUCTION 1
+
+set ncpus = 8
+
+set maindir = /p/lustre2/cheung26/mgmol
+
+setenv LD_LIBRARY_PATH ${maindir}/build_quartz/libROM/build/lib:$LD_LIBRARY_PATH
+
+set exe     = ${maindir}/build_quartz/libROM/build/examples/misc/combine_samples
+
+set snapshot_files = ""
+set snapdir = data_${ncpus}
+
+set efield_min = 0.00000
+set efield_max = 0.00010
+set efield_num_increments = 1
+
+foreach i (`seq 0 $efield_num_increments`)
+  set ex = `echo "scale=5; $efield_min + $i * ($efield_max - $efield_min) / ($efield_num_increments)" | bc`
+  set ex = `printf "%.5f" $ex` 
+  foreach j (`seq 0 $efield_num_increments`)
+    set ey = `echo "scale=5; $efield_min + $j * ($efield_max - $efield_min) / ($efield_num_increments)" | bc`
+    set ey = `printf "%.5f" $ey`
+    foreach k (`seq 0 $efield_num_increments`)
+      set ez = `echo "scale=5; $efield_min + $k * ($efield_max - $efield_min) / ($efield_num_increments)" | bc`
+      set ez = `printf "%.5f" $ez`
+
+      set occ = 222200
+      echo "efield: ($ex, $ey, $ez), occ: $occ"
+      set tag = ${ex}_${ey}_${ez}_${occ}
+      set snapshot_files = "$snapshot_files ${snapdir}/${tag}/orbital_snapshot"
+
+      set occ = 222110
+      echo "efield: ($ex, $ey, $ez), occ: $occ"
+      set tag = ${ex}_${ey}_${ez}_${occ}
+      set snapshot_files = "$snapshot_files ${snapdir}/${tag}/orbital_snapshot"
+    end
+  end
+end
+ 
+echo "Snapshot files: $snapshot_files"
+
+set basis_tag = "${efield_min}_${efield_max}_${efield_num_increments}"
+set basis_file = "dipole_efield_occ2_orbitals_basis_${basis_tag}"
+srun -n $ncpus $exe -f ${snapdir}/${basis_file} ${snapshot_files} > ${snapdir}/${basis_file}.out
+
+#set cmin = 10
+#set cmax = 14
+#srun -n $ncpus $exe -f ${snapdir}/${basis_file} ${snapshot_files} -cmin ${cmin} -cmax ${cmax} > ${snapdir}/${basis_file}_${cmin}_${cmax}.out
+
+date
