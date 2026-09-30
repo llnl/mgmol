@@ -149,32 +149,19 @@ int main(int argc, char** argv)
         HDFrestart h5file(ct.restart_file, myPEenv, ct.restart_file_type);
         orbitals.read_hdf5(h5file);
 
-        //
-        // evaluate energy and forces again, with wavefunctions
+        // evaluate dipole moment with wavefunctions
         // frozen to solution of previous problem
-        //
 
         // reset initial DM to test iterative solve for it
         projmatrices->setDMuniform(ct.getNelSpin());
         ct.dm_inner_steps = 50;
         std::vector<double> forces;
 
-        double eks = mgmol->evaluateDMandEnergyAndForces(
-            &orbitals, positions, anumbers, forces);
+        mgmol->evaluateDipoleMoments(orbitals,
+            &orbitals, positions, anumbers);
 
-        // print out results
-        if (MPIdata::onpe0)
-        {
-            std::cout << "Eks1 : " << eks << std::endl;
-            std::cout << "Forces1 :" << std::endl;
-            for (std::vector<double>::iterator it = forces.begin();
-                 it != forces.end(); it += 3)
-            {
-                for (int i = 0; i < 3; i++)
-                    std::cout << "    " << *(it + i);
-                std::cout << std::endl;
-            }
-        }
+        // evaluate dipole moment with wavefunctions
+        // from ROM basis
 
         orbitals.set(ct.getROMOptions().basis_file, ct.numst);
         orbitals.orthonormalizeLoewdin();
@@ -185,21 +172,8 @@ int main(int argc, char** argv)
         projmatrices->setDMuniform(ct.getNelSpin());
         projmatrices->printDM(std::cout);
 
-        eks = mgmol->evaluateDMandEnergyAndForces(
-            &orbitals, positions, anumbers, forces);
-
-        if (MPIdata::onpe0)
-        {
-            std::cout << "Eks2: " << eks << std::endl;
-            std::cout << "Forces2 :" << std::endl;
-            for (std::vector<double>::iterator it = forces.begin();
-                 it != forces.end(); it += 3)
-            {
-                for (int i = 0; i < 3; i++)
-                    std::cout << "    " << *(it + i);
-                std::cout << std::endl;
-            }
-        }
+        mgmol->evaluateDipoleMoments(orbitals,
+            &orbitals, positions, anumbers);
 
         delete mgmol;
 
