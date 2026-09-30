@@ -129,16 +129,6 @@ int main(int argc, char** argv)
         const pb::Grid& mygrid = mymesh->grid();
         const pb::PEenv& myPEenv = mymesh->peenv();
 
-        const int rdim = ct.getROMOptions().num_orbbasis;
-
-        if (rdim != ct.numst)
-        {
-            std::cerr << "The number of functions in the ROM basis file, "
-                      << rdim << " is not equal to ct.numst, " << ct.numst
-                      << std::endl;
-            MPI_Abort(mmpi.commSameSpin(), 0);
-        }
-
         std::shared_ptr<ProjectedMatricesInterface> projmatrices =
             mgmol->getProjectedMatrices();
 
@@ -157,11 +147,38 @@ int main(int argc, char** argv)
         ct.dm_inner_steps = 50;
         std::vector<double> forces;
 
-        mgmol->evaluateDipoleMoments(orbitals,
+        double eks = mgmol->evaluateDMandEnergyAndForces(
+            &orbitals, positions, anumbers, forces);
+
+        // print out results
+        if (MPIdata::onpe0)
+        {
+            std::cout << "Eks1 : " << eks << std::endl;
+            std::cout << "Forces1 :" << std::endl;
+            for (std::vector<double>::iterator it = forces.begin();
+                 it != forces.end(); it += 3)
+            {
+                for (int i = 0; i < 3; i++)
+                    std::cout << "    " << *(it + i);
+                std::cout << std::endl;
+            }
+        }
+
+        mgmol->evaluateDipoleMoment(
             &orbitals, positions, anumbers);
 
         // evaluate dipole moment with wavefunctions
         // from ROM basis
+
+        const int rdim = ct.getROMOptions().num_orbbasis;
+
+        if (rdim != ct.numst)
+        {
+            std::cerr << "The number of functions in the ROM basis file, "
+                      << rdim << " is not equal to ct.numst, " << ct.numst
+                      << std::endl;
+            MPI_Abort(mmpi.commSameSpin(), 0);
+        }
 
         orbitals.set(ct.getROMOptions().basis_file, ct.numst);
         orbitals.orthonormalizeLoewdin();
@@ -172,7 +189,23 @@ int main(int argc, char** argv)
         projmatrices->setDMuniform(ct.getNelSpin());
         projmatrices->printDM(std::cout);
 
-        mgmol->evaluateDipoleMoments(orbitals,
+        eks = mgmol->evaluateDMandEnergyAndForces(
+            &orbitals, positions, anumbers, forces);
+
+        if (MPIdata::onpe0)
+        {
+            std::cout << "Eks2: " << eks << std::endl;
+            std::cout << "Forces2 :" << std::endl;
+            for (std::vector<double>::iterator it = forces.begin();
+                 it != forces.end(); it += 3)
+            {
+                for (int i = 0; i < 3; i++)
+                    std::cout << "    " << *(it + i);
+                std::cout << std::endl;
+            }
+        }
+
+        mgmol->evaluateDipoleMoment(
             &orbitals, positions, anumbers);
 
         delete mgmol;
