@@ -41,6 +41,10 @@ class MasksSet;
 template <class OrbitalsType>
 class IonicAlgorithm;
 
+template <class OrbitalsType, class MatrixType>
+void computeDipoleMoment(const OrbitalsType& orbitals, Ions& ions,
+    ProjectedMatrices<MatrixType>& projmatrices);
+
 #include "AOMMprojector.h"
 #include "ClusterOrbitals.h"
 #include "DMStrategy.h"
