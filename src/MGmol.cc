@@ -1632,7 +1632,7 @@ double MGmol<OrbitalsType>::evaluateDMandEnergyAndForces(Orbitals* orbitals,
 }
 
 template <class OrbitalsType>
-void MGmol<OrbitalsType>::evaluateDipoleMoments(Orbitals* orbitals,
+void MGmol<OrbitalsType>::evaluateDipoleMoment(Orbitals* orbitals,
   const std::vector<double>& tau, const std::vector<short>& atnumbers)
 {
     Control& ct = *(Control::instance());
