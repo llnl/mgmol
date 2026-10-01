@@ -1,7 +1,8 @@
 #!/bin/tcsh
 #SBATCH -N 8
 #SBATCH -t 1:00:00
-#SBATCH -p pdebug
+#SBATCH -p pbatch
+#SBATCH -A romdft
 
 date
 
@@ -23,7 +24,7 @@ set occ = "1., 1., 1., 0.5, 0.25, 0.25"
 set efield_min = 0.00000
 set efield_max = 0.00010
 set efield_num_increments = 1
-set rdim = 6
+set rdim = 18
 
 set maindir = /p/lustre2/cheung26/mgmol
 
@@ -43,21 +44,22 @@ echo "ne = $ne"
 set exe     = mgmol-opt
 cp $maindir/install_quartz/bin/$exe .
 
-set tag = ${rdim}_${ex_init}_${ey_init}_${ez_init}
+set init_tag = ${ex_init}_${ey_init}_${ez_init}
 
-set cfg_init = efield_${tag}_init.cfg
+set cfg_init = efield_${rdim}_${init_tag}_init.cfg
 cp efield_init.cfg ${cfg_init}
 sed -i "s/NCPUS/${ncpus}/g" ${cfg_init}
 sed -i "s/EX_VAL/${ex_init}/g" ${cfg_init}
 sed -i "s/EY_VAL/${ey_init}/g" ${cfg_init}
 sed -i "s/EZ_VAL/${ez_init}/g" ${cfg_init}
 sed -i "s/NE/${ne}/g" ${cfg_init}
+sed -i "s/NB/${rdim}/g" ${cfg_init}
 
 echo "Running ${exe} with ${cfg_init}"
 echo "ne = $ne"
-srun -p pdebug -n $ncpus $exe -c $cfg_init -i $coord_file > init_results_${tag}.out
+srun -p pdebug -n $ncpus $exe -c $cfg_init -i $coord_file > init_results_${rdim}_${init_tag}.out
 
-set tag = ${rdim}_${ex_test}_${ey_test}_${ez_test}
+set test_tag = ${ex_test}_${ey_test}_${ez_test}
 
 set nnz = `echo $occ | tr ',' ' ' | wc -w`
 @ nz = $rdim - $nnz
@@ -67,7 +69,7 @@ while ($i <= $nz)
     @ i++
 end
 
-set cfg_ref = efield_${tag}_ref.cfg
+set cfg_ref = efield_${rdim}_${test_tag}_ref.cfg
 cp efield_ref.cfg ${cfg_ref}
 sed -i "s/NCPUS/${ncpus}/g" ${cfg_ref}
 sed -i "s/EX_VAL/${ex_test}/g" ${cfg_ref}
@@ -75,12 +77,13 @@ sed -i "s/EY_VAL/${ey_test}/g" ${cfg_ref}
 sed -i "s/EZ_VAL/${ez_test}/g" ${cfg_ref}
 sed -i "s/OCC/${occ}/g" ${cfg_ref}
 sed -i "s/NE/${ne}/g" ${cfg_ref}
+sed -i "s/NB/${rdim}/g" ${cfg_ref}
 
 echo "Running ${exe} with ${cfg_ref}"
 echo "nnz = $nnz"
 echo "nz = $nz"
 echo "occ = $occ"
-srun -p pdebug -n $ncpus $exe -c $cfg_ref -i $coord_file > ref_results_${tag}.out
+srun -p pdebug -n $ncpus $exe -c $cfg_ref -i $coord_file > ref_results_${rdim}_${test_tag}.out
 
 set nfocc = `echo $occ | grep -o "1.," | wc -l`
 @ n_occ_samp = $nnz - $nfocc
@@ -90,9 +93,13 @@ set basis_file = data_${ncpus}/dipole_efield_occ${n_occ_samp}_orbitals_basis_${b
 set exe     = testDipole_Occ
 cp $maindir/build_quartz/tests/$exe .
 
-set cfg_online = efield_${tag}_online.cfg
+set tag = ${test_tag}_${init_tag}_${basis_tag}
+set cfg_online = efield_${rdim}_${tag}_online.cfg
 cp efield_online.cfg ${cfg_online}
 sed -i "s/NCPUS/${ncpus}/g" ${cfg_online}
+sed -i "s/EX_INIT/${ex_init}/g" ${cfg_online}
+sed -i "s/EY_INIT/${ey_init}/g" ${cfg_online}
+sed -i "s/EZ_INIT/${ez_init}/g" ${cfg_online}
 sed -i "s/EX_VAL/${ex_test}/g" ${cfg_online}
 sed -i "s/EY_VAL/${ey_test}/g" ${cfg_online}
 sed -i "s/EZ_VAL/${ez_test}/g" ${cfg_online}
@@ -105,6 +112,6 @@ echo "Running ${exe} with ${cfg_online}"
 echo "nfocc = $nfocc"
 echo "n_occ_samp = $n_occ_samp"
 echo "basis_file = $basis_file"
-srun -p pdebug -n $ncpus $exe -c ${cfg_online} -i $coord_file > online_results_${tag}.out
+srun -p pdebug -n $ncpus $exe -c ${cfg_online} -i $coord_file > online_results_${rdim}_${tag}.out
 
 date
