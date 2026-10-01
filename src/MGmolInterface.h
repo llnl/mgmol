@@ -38,6 +38,9 @@ public:
         const std::vector<double>& tau, const std::vector<short>& atnumbers,
         std::vector<double>& forces)
         = 0;
+    virtual void evaluateDipoleMoment(Orbitals*,
+        const std::vector<double>& tau, const std::vector<short>& atnumbers)
+        = 0;
 
     virtual void getAtomicPositions(std::vector<double>& tau) = 0;
     virtual void getAtomicNumbers(std::vector<short>& an)     = 0;
