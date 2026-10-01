@@ -1,7 +1,8 @@
 #!/bin/tcsh
 #SBATCH -N 8
 #SBATCH -t 0:10:00
-#SBATCH -p pdebug
+#SBATCH -p pbatch
+#SBATCH -A romdft
 
 date
 
