@@ -1,7 +1,8 @@
 #!/bin/tcsh
 #SBATCH -N 8
 #SBATCH -t 0:10:00
-#SBATCH -p pdebug
+#SBATCH -p pbatch
+#SBATCH -A romdft
 
 date
 
@@ -21,7 +22,7 @@ set snapdir = data_${ncpus}
 
 set efield_min = 0.00000
 set efield_max = 0.00010
-set efield_num_increments = 1
+set efield_num_increments = 2
 
 foreach i (`seq 0 $efield_num_increments`)
   set ex = `echo "scale=5; $efield_min + $i * ($efield_max - $efield_min) / ($efield_num_increments)" | bc`
