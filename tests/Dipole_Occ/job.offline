@@ -1,7 +1,8 @@
 #!/bin/tcsh
 #SBATCH -N 8
 #SBATCH -t 1:00:00
-#SBATCH -p pdebug
+#SBATCH -p pbatch
+#SBATCH -A romdft
 
 date
 
@@ -29,7 +30,7 @@ set efield_min = 0.00000
 set efield_max = 0.00010
 set efield_num_increments = 2
 
-set occ = 222200
+set occ = 222011
 set cfg_offline = efield_${occ}_offline.cfg
 
 mkdir ${outdir}
