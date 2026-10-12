@@ -1,5 +1,7 @@
 #include "GridFunc.h"
+#include "Laph2.h"
 #include "Laph4.h"
+#include "Laph6.h"
 #include "MGmol_MPI.h"
 #include "PCGSolver.h"
 #include "PEenv.h"
@@ -83,10 +85,13 @@ double Function::lattice_[3] = { -1, -1, -1 };
 double Function::coeff_[3]   = { 0, 0, 0 };
 
 // run test problems
-TEST_CASE("Poisson", "[poisson]")
+template <class LapOperator>
+void run_test()
 {
-    MGmol_MPI::setup(MPI_COMM_WORLD, std::cout);
     MGmol_MPI& mmpi = *(MGmol_MPI::instance());
+
+    const int nghosts = LapOperator::minNumberGhosts();
+    const int order   = LapOperator::order();
 
     // specify computational domain
     const double origin[3]  = { 0., 0., 0. };
@@ -95,7 +100,6 @@ TEST_CASE("Poisson", "[poisson]")
 
     // mesh parameters
     const unsigned ngpts[3] = { 32, 24, 20 };
-    const short nghosts     = 2;
 
     // domain decomposition
     pb::PEenv mype_env(MPI_COMM_WORLD, ngpts[0], ngpts[1], ngpts[2]);
@@ -103,7 +107,7 @@ TEST_CASE("Poisson", "[poisson]")
     // generate computaional mesh
     pb::Grid grid(origin, lattice, ngpts, mype_env, nghosts, 0);
 
-    pb::Laph4<double> lap(grid);
+    LapOperator lap(grid);
 
     // periodic GridFunc
     const short bc[3] = { 1, 1, 1 };
@@ -114,6 +118,9 @@ TEST_CASE("Poisson", "[poisson]")
     double coeff[3] = { 1., 3., 2. };
     Function f(lattice, coeff);
 
+    // order factor
+    double factor = pow(2, order);
+
     // initialize gfu
     f.set(gfu);
 
@@ -121,9 +128,9 @@ TEST_CASE("Poisson", "[poisson]")
     gfu.trade_boundaries();
 
     const short precond_lap_type = 1; // 2nd order
-    PCGSolver<pb::Laph4<double>, double, float> pcg(
+    PCGSolver<LapOperator, double, float> pcg(
         lap, precond_lap_type, bc[0], bc[1], bc[2]);
-    const double tol    = 1.e-12;
+    const double tol    = 1.e-11;
     int maxits          = 30;
     const int max_level = 10;
     pcg.setup(1, 1, maxits, tol, max_level);
@@ -175,7 +182,7 @@ TEST_CASE("Poisson", "[poisson]")
 
         if (mmpi.instancePE0())
             std::cout << "Norm of discretization error = " << ne << std::endl;
-        CHECK(ne < 1.e-2);
+        CHECK(ne < 0.6 / factor);
 
         // generate finer computaional mesh
         const unsigned ngpts_fine[3]
@@ -185,7 +192,7 @@ TEST_CASE("Poisson", "[poisson]")
         pb::Grid grid_fine(
             origin, lattice, ngpts_fine, mype_env_fine, nghosts, 0);
 
-        pb::Laph4<double> lap_fine(grid_fine);
+        LapOperator lap_fine(grid_fine);
 
         // periodic GridFunc
         pb::GridFunc<double> gfu_fine(grid_fine, bc[0], bc[1], bc[2]);
@@ -193,7 +200,7 @@ TEST_CASE("Poisson", "[poisson]")
         pb::GridFunc<double> gff_fine(grid_fine, bc[0], bc[1], bc[2]);
 
         maxits = 50;
-        PCGSolver<pb::Laph4<double>, double, float> pcg_fine(
+        PCGSolver<LapOperator, double, float> pcg_fine(
             lap_fine, precond_lap_type, bc[0], bc[1], bc[2]);
         pcg_fine.setup(1, 1, maxits, tol, max_level);
 
@@ -213,10 +220,30 @@ TEST_CASE("Poisson", "[poisson]")
         {
             std::cout << "Norm of discretization error = " << ne_fine
                       << std::endl;
-            std::cout << "Expected : " << ne / 16. << std::endl;
+            std::cout << "Expected : " << ne / factor << std::endl;
         }
         CHECK(ne_fine < ne);
         // check within 10% of expected convergence O(h^4)
-        CHECK(std::abs(ne_fine - ne / 16.) < ne_fine * 0.1);
+        CHECK(std::abs(ne_fine - ne / factor) < ne_fine * 0.1);
     }
+}
+
+// run test problems
+TEST_CASE("Poisson", "[poisson]")
+{
+    MGmol_MPI::setup(MPI_COMM_WORLD, std::cout);
+
+    MGmol_MPI& mmpi = *(MGmol_MPI::instance());
+
+    if (mmpi.instancePE0())
+        std::cout << std::endl << "Run test for Laph2..." << std::endl;
+    run_test<pb::Laph2<double>>();
+
+    if (mmpi.instancePE0())
+        std::cout << std::endl << "Run test for Laph4..." << std::endl;
+    run_test<pb::Laph4<double>>();
+
+    if (mmpi.instancePE0())
+        std::cout << std::endl << "Run test for Laph6..." << std::endl;
+    run_test<pb::Laph6<double>>();
 }

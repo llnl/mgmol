@@ -79,6 +79,7 @@ public:
     }
 
     static short minNumberGhosts() { return 1; }
+    static short order() { return 2; }
 
     // A->B
     void apply(GridFunc<T>& A, GridFunc<T>& B) override
