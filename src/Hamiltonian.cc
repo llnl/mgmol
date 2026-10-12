@@ -104,34 +104,43 @@ void Hamiltonian<T>::applyLocal(const int ncolors, T& phi, T& hphi)
     // start timer after filling ghost values
     apply_Hloc_tm_.start();
 
-    using memory_space_type = typename T::memory_space_type;
+    auto first_value       = phi.getPsi(0)[0];
+    using OrbitalsDataType = decltype(first_value);
 
-    if (ct.Mehrstellen())
+    using memory_space_type = typename T::memory_space_type;
+    using MultiVector = pb::GridFuncVector<OrbitalsDataType, memory_space_type>;
+
+    if (ct.lap_type != 2)
     {
+        // need phi with ghosts
+        MultiVector& gfvphi(*phi.getPtDataWGhosts());
+
+        // gfvw1 = potential * phi
         pb::GridFunc<POTDTYPE> gfpot(
             mygrid, ct.bcWF[0], ct.bcWF[1], ct.bcWF[2]);
         gfpot.assign(vtot);
         gfpot.trade_boundaries();
         const std::vector<std::vector<int>>& gid(phi.getOverlappingGids());
-        pb::GridFuncVector<ORBDTYPE, memory_space_type> gfvw1(
-            mygrid, ct.bcWF[0], ct.bcWF[1], ct.bcWF[2], gid);
-        pb::GridFuncVector<ORBDTYPE, memory_space_type>& gfvphi(
-            *phi.getPtDataWGhosts());
-        gfvw1.pointwiseProduct(gfvphi, gfpot);
+        MultiVector tmp1(mygrid, ct.bcWF[0], ct.bcWF[1], ct.bcWF[2], gid);
+        tmp1.pointwiseProduct(gfvphi, gfpot);
 
-        pb::GridFuncVector<ORBDTYPE, memory_space_type> gfv_work1(
-            mygrid, ct.bcWF[0], ct.bcWF[1], ct.bcWF[2], gid);
-        // work1 = B*V*psi
-        gfvw1.applyRHS(0, gfv_work1);
+        MultiVector tmp2(mygrid, ct.bcWF[0], ct.bcWF[1], ct.bcWF[2], gid);
 
-        pb::GridFuncVector<ORBDTYPE, memory_space_type>* gfv_phi
-            = phi.getPtDataWGhosts();
-        // gfvw1 = -Lap*phi
-        gfv_phi->applyLap(0, gfvw1);
-        // gfv_work1 = -Lap*phi + B*V*psi
-        gfv_work1.axpy((ORBDTYPE)1., gfvw1);
+        if (ct.Mehrstellen())
+        {
+            // work1 = B*V*psi
+            tmp1.applyRHS(0, tmp2);
+        }
+        else
+        {
+            tmp2.copyFrom(tmp1);
+        }
+        // tmp1 = -Lap*phi
+        gfvphi.applyLap(ct.lap_type, tmp1);
+        // tmp2 = -Lap*phi + B*V*psi
+        tmp2.axpy((OrbitalsDataType)1., tmp1);
         // set hpsi data without ghosts
-        hphi.setPsi(gfv_work1);
+        hphi.setPsi(tmp2);
     }
     else
     {
@@ -140,21 +149,24 @@ void Hamiltonian<T>::applyLocal(const int ncolors, T& phi, T& hphi)
         // #pragma omp parallel for
         for (int i = 0; i < ncolors; i++)
         {
-            using memory_space_type   = typename T::memory_space_type;
-            auto ihphi                = hphi.getPsi(i);
-            unsigned int const size   = hphi.getNumpt();
-            ORBDTYPE* ihphi_host_view = MemorySpace::Memory<ORBDTYPE,
-                memory_space_type>::allocate_host_view(size);
-            MemorySpace::Memory<ORBDTYPE, memory_space_type>::copy_view_to_host(
-                hphi.getPsi(i), size, ihphi_host_view);
+            using memory_space_type = typename T::memory_space_type;
+            auto ihphi              = hphi.getPsi(i);
+            unsigned int const size = hphi.getNumpt();
+            OrbitalsDataType* ihphi_host_view
+                = MemorySpace::Memory<OrbitalsDataType,
+                    memory_space_type>::allocate_host_view(size);
+            MemorySpace::Memory<OrbitalsDataType,
+                memory_space_type>::copy_view_to_host(hphi.getPsi(i), size,
+                ihphi_host_view);
 
             lapOper_->applyWithPot(
                 phi.getFuncWithGhosts(i), vtot, ihphi_host_view);
 
-            MemorySpace::Memory<ORBDTYPE, memory_space_type>::copy_view_to_dev(
-                ihphi_host_view, size, ihphi);
-            MemorySpace::Memory<ORBDTYPE, memory_space_type>::free_host_view(
-                ihphi_host_view);
+            MemorySpace::Memory<OrbitalsDataType,
+                memory_space_type>::copy_view_to_dev(ihphi_host_view, size,
+                ihphi);
+            MemorySpace::Memory<OrbitalsDataType,
+                memory_space_type>::free_host_view(ihphi_host_view);
         }
     }
 
