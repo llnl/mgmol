@@ -2483,6 +2483,8 @@ template void GridFuncVector<float, MemorySpace::Host>::copyFrom(
     const GridFuncVector<double, MemorySpace::Host>& src);
 template void GridFuncVector<double, MemorySpace::Host>::copyFrom(
     const GridFuncVector<float, MemorySpace::Host>& src);
+template void GridFuncVector<ORBDTYPE, MemorySpace::Host>::copyFrom(
+    const GridFuncVector<ORBDTYPE, MemorySpace::Host>& src);
 
 #ifdef HAVE_MAGMA
 template class GridFuncVector<double, MemorySpace::Device>;
