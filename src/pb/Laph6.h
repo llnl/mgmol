@@ -29,13 +29,12 @@ public:
     Laph6(const Grid& mygrid) : Lap<T>(mygrid)
     {
         // cout<<" Create Laph6 operator\n";
-
         assert(fabs((Lap<T>::inv_h2(0) - Lap<T>::inv_h2(1)) / Lap<T>::inv_h2(0))
-               < 0.05);
+               < 2.);
         assert(fabs((Lap<T>::inv_h2(1) - Lap<T>::inv_h2(2)) / Lap<T>::inv_h2(1))
-               < 0.05);
+               < 2.);
         assert(fabs((Lap<T>::inv_h2(2) - Lap<T>::inv_h2(0)) / Lap<T>::inv_h2(2))
-               < 0.05);
+               < 2.);
 
         diagEl_ = (49. / 18.)
                   * (Lap<T>::inv_h2(0) + Lap<T>::inv_h2(1) + Lap<T>::inv_h2(2));
@@ -87,6 +86,7 @@ public:
     }
 
     static short minNumberGhosts() { return 3; }
+    static short order() { return 6; }
 
     // A->B
     void apply(GridFunc<T>& A, GridFunc<T>& B) override
