@@ -335,9 +335,6 @@ int HamiltonianMVPSolver<MatrixType, ProjMatrixType, OrbitalsType>::solve(
 
     projmatrices->updateDM();
 
-    // Generate new density
-    rho_->update(orbitals);
-
     if (mmpi.PE0() && ct.verbose > 1)
     {
         os_ << "-----------------------------" << std::endl;

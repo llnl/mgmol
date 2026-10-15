@@ -1573,6 +1573,8 @@ double MGmol<OrbitalsType>::evaluateDMandEnergyAndForces(Orbitals* orbitals,
     }
 #endif
 
+    rho_->update(*dorbitals);
+
     // evaluate energy and forces
     double ts  = 0.;
     double eks = energy_->evaluateTotal(
