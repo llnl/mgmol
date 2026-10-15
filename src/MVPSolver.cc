@@ -391,9 +391,6 @@ int MVPSolver<OrbitalsType, MatrixType>::solve(OrbitalsType& orbitals)
         projmatrices->setHB2H();
     }
 
-    // Generate new density
-    rho_->update(orbitals);
-
     if (onpe0 && ct.verbose > 1)
     {
         os_ << "---------------------------------------------------------------"

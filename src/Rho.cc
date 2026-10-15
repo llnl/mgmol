@@ -72,6 +72,8 @@ void Rho<OrbitalsType>::setup(const OrthoType orbitals_type,
     orbitals_type_ = orbitals_type;
 
     orbitals_indexes_ = orbitals_indexes;
+
+    iterative_index_ = -1;
 }
 
 template <class OrbitalsType>
@@ -96,18 +98,9 @@ void Rho<OrbitalsType>::update(OrbitalsType& current_orbitals)
     if (verbosity_level_ > 1 && onpe0)
         (*MPIdata::sout) << "Rho::update()..." << std::endl;
 
-    const int new_iterative_index
-        = ((1 + current_orbitals.getIterativeIndex()) % 100)
-          + (proj_matrices.getDMMatrixIndex() % 100) * 100;
+    iterative_index_ = ((1 + current_orbitals.getIterativeIndex()) % 100)
+                       + (proj_matrices.getDMMatrixIndex() % 100) * 100;
 
-    if (iterative_index_ == new_iterative_index)
-    {
-        if (onpe0 && verbosity_level_ > 1)
-            (*MPIdata::sout) << "Rho already up to date, iterative_index_="
-                             << iterative_index_ << std::endl;
-        return;
-    }
-    iterative_index_ = new_iterative_index;
 #ifdef PRINT_OPERATIONS
     if (onpe0)
         (*MPIdata::sout) << "Rho<OrbitalsType>::update(), iterative_index_="
