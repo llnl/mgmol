@@ -51,10 +51,13 @@ public:
     virtual void updateHFromHnl(Orbitals* orbitals, ReplicatedMatrix& Hnl, ReplicatedMatrix& mat) = 0;
     virtual void updateHFromHnl(Orbitals* orbitals, dist_matrix::DistMatrix<DISTMATDTYPE>& Hnl, dist_matrix::DistMatrix<DISTMATDTYPE>& mat) = 0;
     virtual void finalEnergy() = 0;
+    virtual double finalEnergy(Orbitals* orbitals) = 0;
     virtual double getTotalEnergy() = 0;
     virtual void mdInit(Ions& ions) = 0;
     virtual void mdStep(Orbitals& orbitals, Ions& ions) = 0;
     virtual void mdFinalize() = 0;
+    virtual void recordStoppingEnergySample(double energy_sc) = 0;
+    virtual void updatePerturbationField(double t) = 0;
 };
 
 #endif

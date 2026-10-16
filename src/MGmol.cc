@@ -578,12 +578,21 @@ void MGmol<OrbitalsType>::run()
 } // run()
 
 template <class OrbitalsType>
-void MGmol<OrbitalsType>::finalEnergy()
+double MGmol<OrbitalsType>::finalEnergy(Orbitals* orbitals)
 {
+    OrbitalsType* dorbitals = dynamic_cast<OrbitalsType*>(orbitals);
+    assert(dorbitals != nullptr);
+
     // Get the total energy
     const double ts = 0.5 * proj_matrices_->computeEntropy(); // in [Ha]
-    total_energy_   = energy_->evaluateTotal(
-        ts, proj_matrices_.get(), *ions_, *current_orbitals_, 2, os_);
+    return  energy_->evaluateTotal(
+        ts, proj_matrices_.get(), *ions_, *dorbitals, 2, os_);
+}
+
+template <class OrbitalsType>
+void MGmol<OrbitalsType>::finalEnergy()
+{
+    total_energy_ = finalEnergy(current_orbitals_);
 }
 
 template <class OrbitalsType>
@@ -1628,11 +1637,19 @@ void MGmol<OrbitalsType>::updateHFromHnl(Orbitals* orbitals, MatrixType& Hnl, Ma
     /* Update electron density and potentials */   
     rho_->update(*dorbitals);
     update_pot(*ions_);
+    energy_->saveVofRho();
     
     /* Update local Hamiltonian with non_local part */
     OrbitalsType hphi("hphi", *dorbitals);    
     hamiltonian_->applyLocal(ct.numst, *dorbitals, hphi);
     dorbitals->addDotWithNcol2Matrix(hphi, mat);
+
+    /* update ProjectedMatrices' matH and matHB */
+    ProjectedMatrices<MatrixType>* dprojmatrices
+        = dynamic_cast<ProjectedMatrices<MatrixType>*>(proj_matrices_.get());
+    assert(dprojmatrices != nullptr);
+    dprojmatrices->assignH(mat);
+    dprojmatrices->setHB2H();
 }
 /* Wrappers to templated function to support runtime polymorphism */
 template <class OrbitalsType>
@@ -1646,10 +1663,73 @@ void MGmol<OrbitalsType>::updateHFromHnl(Orbitals* orbitals, dist_matrix::DistMa
     MGmol<OrbitalsType>::updateHFromHnl<dist_matrix::DistMatrix<DISTMATDTYPE>>(orbitals, Hnl, mat);
 }
 
+/* TDDFT options */
+template <class OrbitalsType>
+void MGmol<OrbitalsType>::discoverProjectile(Ions& ions)
+{
+    Control& ct = *(Control::instance());
+    if (ct.projectile_name.empty()) return;
+
+    std::vector<double>& tau0(ions.getTau0());
+    std::vector<double>& vel(ions.getVelocities());
+    std::vector<short>& atmove(ions.getAtmove());
+
+    /* find projectile ion index */
+    projectile_index_ = ions.findLocalIndex(ct.projectile_name);
+    bool found_projectile = (projectile_index_ == -1) ? false : true;
+    MPI_Allreduce(&found_projectile, &found_projectile_, 1, MPI_CXX_BOOL, MPI_LOR, comm_);
+
+    if (!found_projectile_) return; // checkTDDFTOptions reports this as an error
+
+    /* Record initial position and velocity */
+    if (projectile_index_ != -1)
+    {
+        if (ct.getTrajectoryType() == TrajectoryType::PrescribedVelocity)
+        {
+            if (atmove[projectile_index_] != 0)
+            {
+                (*MPIdata::sout) << "Error: TDDFT.trajectory_type=prescribed_velocity "
+                                     "but projectile '" << ct.projectile_name
+                                  << "' has atmove=1; expected atmove=0 (excluded "
+                                     "from force-driven integration, position set "
+                                     "kinematically)." << std::endl;
+                MPI_Abort(comm_, EXIT_FAILURE);
+            }
+            
+            int index = 3 * projectile_index_;
+            Vector3D v(vel[index], vel[index+1], vel[index+2]);
+            if (length(v) < 1.e-12)
+            {
+                (*MPIdata::sout) << "Error: TDDFT.trajectory_type=prescribed_velocity "
+                                     "but projectile '" << ct.projectile_name
+                                 << "' has zero velocity." << std::endl;
+                MPI_Abort(comm_, EXIT_FAILURE);
+            }
+
+            /* get current project position - tau0 */
+            projectile_x0_ = Vector3D(tau0[index], tau0[index+1], tau0[index+2]);
+            projectile_v_  = v;
+        }
+        else // SelfConsistent
+        {
+            if (atmove[projectile_index_] == 0)
+            {
+                (*MPIdata::sout) << "Error: TDDFT.trajectory_type=self_consistent but "
+                                     "projectile '" << ct.projectile_name
+                                 << "' has atmove=0 (frozen); expected atmove=1."
+                                 << std::endl;
+                MPI_Abort(comm_, EXIT_FAILURE);
+            }
+        }
+    }
+}
+
 /* Initialize ionic stepper for MD */
 template <class OrbitalsType>
 void MGmol<OrbitalsType>::mdInit(Ions& ions)
 {
+    Control& ct = *(Control::instance());
+
     std::vector<double>& tau0(ions.getTau0());
     std::vector<double>& taup(ions.getTaup());
     std::vector<double>& taum(ions.getTaum());
@@ -1658,44 +1738,42 @@ void MGmol<OrbitalsType>::mdInit(Ions& ions)
     std::vector<short>& atmove(ions.getAtmove());
     std::vector<unsigned short>& rand_states(ions.getRandStates());
     std::vector<double>& vel(ions.getVelocities());
-
+    
+    /* initialize taum to velocities for stepper */
     taum = vel;
-    int size_tau = (int)tau0.size();
-    double stepper_dt = 0.2;
-
-    Control& ct = *(Control::instance());
-
+    
+    /* initialize ionic stepper */
     stepper_.reset(new MD_IonicStepper(
-        stepper_dt, atmove, tau0, taup, taum, fion, pmass, rand_states));
+        ct.dt, atmove, tau0, taup, taum, fion, pmass, rand_states));
     stepper_->setThermostat(ct.thermostat_type, ct.tkel, ct.thtime,
         ct.thwidth, constraints_->size());
 
     md_files_.reset(new MDfiles());
-
     constraints_->printConstraints(os_);
-
-    if (ct.restart_info > 0)
-    {
-        stepper_->init(*h5f_file_);
-    }
-    else
-    {
-//        if (onpe0) os_ << "Use input file to initialize MD... dt = " <<ct.dt<< std::endl;
     
-        double dt = -stepper_dt;//ct.dt;
-        int ione  = 1;
-        DSCAL(&size_tau, &dt, &tau0[0], &ione);
-        double one = 1.;
-        DAXPY(&size_tau, &one, &taup[0], &ione, &tau0[0], &ione);
+    /* TDDFT atom dynamics */
+    if (ct.AtomsDynamic() == AtomsDynamicType::TDDFT)
+    {
+        /* Determine valid TDDFT run */
+        discoverProjectile(ions);
+        ct.checkTDDFTOptions(found_projectile_);
 
-        constraints_->enforceConstraints(20);
-        stepper_->updateTau();
-        ions.setLocalPositions(tau0);
-        ions.setup();
-    }
+        /* intialize tracking info */
+        if (ct.track_stopping)
+        {
+            stopping_time_.clear();
+            stopping_dEdt_.clear();
+            stopping_Ekin_.clear();
+            stopping_energy_sc_.clear();
+        }
+        if (ct.track_induced_dipole)
+        {
+            dipole_time_.clear();
+            dipole_moment_.clear();
+        }
+    }    
 
     ions.printPositions(os_);
-    ct.max_changes_pot = 0;
 }
 
 /* Perform one ionic step */
@@ -1709,20 +1787,30 @@ void MGmol<OrbitalsType>::mdStepImpl(OrbitalsType& orbitals, Ions& ions)
     std::vector<double>& fion(ions.getFion());
     std::vector<short>& atmove(ions.getAtmove());
     std::vector<double>& taum(ions.getTaum());
+    std::vector<double>& taup(ions.getTaup());
 
-    double stepper_dt = 0.2;    
 
     md_iterations_tm.start();
 
-    // forces from the current RT-TDDFT density at the current geometry
+    // Compute forces from the current RT-TDDFT density at the current geometry
     force(orbitals, ions);
     ions.getLocalForces(fion);
+
+    /* update tracking info */
+    if (ct.AtomsDynamic() == AtomsDynamicType::TDDFT)
+    {
+        if (ct.track_stopping && (projectile_index_ != -1))
+            accumulateStoppingPower(md_time_, ions);
+
+        if (ct.track_induced_dipole)
+            accumulateDipole(md_time_, orbitals, ions);
+    }
 
     constraints_->addConstraints(ions);
     constraints_->setup(ions);
     constraints_->printConstraintsForces(os_);
     constraints_->projectOutForces();
-
+    // Print atomic coordinates and forces
     if (md_iteration_ % ct.md_print_freq == 0)
     {
         std::string zero = "0";
@@ -1731,14 +1819,16 @@ void MGmol<OrbitalsType>::mdStepImpl(OrbitalsType& orbitals, Ions& ions)
             std::vector<float> spreads;
             std::vector<Vector3D> centers;
             std::vector<int> lgids;
+
             if (ct.isLocMode())
             {
                 spreadf_->computeLocalSpreads(spreads);
                 spreadf_->getLocalCenters(centers);
                 spreadf_->getLocalGids(lgids);
             }
+            
             md_files_->printDataInFiles(ions_names, tau0, fion, taum,
-                centers, spreads, lgids, md_iteration_, stepper_dt);
+                centers, spreads, lgids, md_iteration_, ct.dt);    
         }
         if (ions_->getNumIons() < 256 || ct.verbose > 2)
         {
@@ -1750,14 +1840,26 @@ void MGmol<OrbitalsType>::mdStepImpl(OrbitalsType& orbitals, Ions& ions)
         }
     }
 
-    if (stepper_dt <= 0.) checkMaxForces(fion, atmove, os_);
+    if (ct.dt <= 0.) checkMaxForces(fion, atmove, os_);
 
     stepper_->run();
     if (ct.enforceVmass0) ions.removeMassCenterMotion();
-    if (ct.verbose > 2 && stepper_dt > 0.) stepper_->printVelocities(os_);
+    if (ct.verbose > 2 && ct.dt > 0.) stepper_->printVelocities(os_);
+
+    // prescribed-velocity kinematic override (atmove=0 excludes it from stepper_->run())
+    if (ct.AtomsDynamic() == AtomsDynamicType::TDDFT && (projectile_index_ != -1)
+        && ct.getTrajectoryType() == TrajectoryType::PrescribedVelocity)
+    {
+        double t_next = md_time_ + ct.dt;
+        Vector3D xnew = projectile_x0_ + projectile_v_ * t_next;
+        int i3 = 3 * projectile_index_;
+        taup[i3] = xnew[0]; 
+        taup[i3+1] = xnew[1]; 
+        taup[i3+2] = xnew[2];
+    }
 
     double ekin = 0.;
-    if (stepper_dt > 0.)
+    if (ct.dt > 0.)
     {
         const double temperature = stepper_->temperature();
         ekin                     = stepper_->kineticEnergy();
@@ -1775,17 +1877,225 @@ void MGmol<OrbitalsType>::mdStepImpl(OrbitalsType& orbitals, Ions& ions)
 
     ct.steps = md_iteration_;
 
-    moveVnuc(ions);   // rebuilds local potential / marks H stale at new R
+    moveVnuc(ions);
 
-    md_time_ += stepper_dt;
-    if (stepper_dt > 0.) md_iteration_++;
+    md_time_ += ct.dt;
+    if (ct.dt > 0.) md_iteration_++;
 
     md_iterations_tm.stop();
 }
+
+template <class OrbitalsType>
+void MGmol<OrbitalsType>::accumulateStoppingPower(
+    double t, Ions& ions)
+{
+    if(projectile_index_ == -1) return;
+
+    Control& ct = *(Control::instance());
+    Ion* pion = ions.local_ions()[projectile_index_];
+
+    if (ct.getTrajectoryType() == TrajectoryType::PrescribedVelocity)
+    {
+        double dEdt = -(pion->force(0)   * projectile_v_[0]
+                    + pion->force(1) * projectile_v_[1]
+                    + pion->force(2) * projectile_v_[2]);
+        stopping_time_.push_back(t);
+        stopping_dEdt_.push_back(dEdt);
+    }
+    else // SelfConsistent
+    {
+        std::vector<double>& vel(ions.getVelocities());
+        Vector3D v(pion->velocity(0), pion->velocity(1), pion->velocity(2));
+        double vmag = length(v);
+
+        double dEdt = pion->force(0)*v[0] + pion->force(1)*v[1] + pion->force(2)*v[2];
+        double mass = pion->getMass();
+        double Ekin = 0.5 * mass * vmag * vmag;
+
+        stopping_time_.push_back(t);
+        stopping_dEdt_.push_back(dEdt);
+        stopping_Ekin_.push_back(Ekin);
+    }
+}
+
+template <class OrbitalsType>
+void MGmol<OrbitalsType>::accumulateDipole(double t, OrbitalsType& orbitals,
+    Ions& ions)
+{
+    Control& ct = *(Control::instance());
+
+    if (ct.rmatrices)
+    {
+        ProjectedMatrices<ReplicatedMatrix>* dprojmatrices
+            = dynamic_cast<ProjectedMatrices<ReplicatedMatrix>*>(proj_matrices_.get());
+        assert(dprojmatrices != nullptr);
+
+        Vector3D mu = computeDipoleMomentVector(orbitals, ions, *dprojmatrices, false);
+        dipole_time_.push_back(t);
+        dipole_moment_.push_back(mu);
+    }
+    else
+    {
+/*
+        ProjectedMatrices<dist_matrix::DistMatrix<DISTMATDTYPE>>* dprojmatrices
+            = dynamic_cast<ProjectedMatrices<dist_matrix::DistMatrix<DISTMATDTYPE>>*>(
+                proj_matrices_.get());
+        assert(dprojmatrices != nullptr);
+
+        Vector3D mu = computeDipoleMomentVector(orbitals, ions, *dprojmatrices, false);
+        dipole_time_.push_back(t);
+        dipole_moment_.push_back(mu);
+*/
+
+        (*MPIdata::sout) << "Error: Not implemented for this MatrixType."
+                         "Requires replicated matrices (rmatrices=true)."
+                         << std::endl;
+        MPI_Abort(comm_, EXIT_FAILURE);
+    }
+}
+
+template <class OrbitalsType>
+void MGmol<OrbitalsType>::updatePerturbationField(double t)
+{
+    Control& ct = *(Control::instance());
+    if (ct.getPerturbationType() == PerturbationType::None) return;
+
+    double envelope = 0.;
+
+    if (ct.getPerturbationType() == PerturbationType::GaussianPulse)
+    {
+        double dt_center = t - ct.perturbation_t_center;
+        envelope = ct.perturbation_amplitude
+            * std::exp(-dt_center * dt_center
+                        / (2. * ct.perturbation_width * ct.perturbation_width));
+    }
+    else if (ct.getPerturbationType() == PerturbationType::DeltaKick)
+    {
+        if (std::fabs(t - ct.perturbation_t_center) <= 0.5 * ct.dt)
+            envelope = ct.perturbation_amplitude / ct.dt;
+    }
+
+    double ex = envelope * ct.perturbation_direction[0];
+    double ey = envelope * ct.perturbation_direction[1];
+    double ez = envelope * ct.perturbation_direction[2];
+
+    /* update Vefield */
+    Potentials& pot = hamiltonian_->potential();
+    pot.setupVefield(ex, ey, ez);
+}
+
+template <class OrbitalsType>
+void MGmol<OrbitalsType>::recordStoppingEnergySample(double energy_sc)
+{
+    Control& ct = *(Control::instance());
+
+    // Secondary diagnostic only: meaningful for prescribed-velocity, frozen
+    // lattice, no perturbation. Gated on projectile_index_ != -1 (this rank
+    // owns the projectile) rather than a global flag, to keep this trace's
+    // length aligned with stopping_time_/stopping_dEdt_, which are populated
+    // by accumulateStoppingPower under the same per-rank condition.
+    if (ct.track_stopping && projectile_index_ != -1
+        && ct.getTrajectoryType() == TrajectoryType::PrescribedVelocity)
+    {
+        stopping_energy_sc_.push_back(energy_sc);
+    }
+}
+
+template <class OrbitalsType>
+void MGmol<OrbitalsType>::finalizeStoppingPower()
+{
+    Control& ct = *(Control::instance());
+    if (projectile_index_ == -1) return;   // only the owning rank has data to report
+    if (stopping_dEdt_.empty()) return;
+
+    if (ct.getTrajectoryType() == TrajectoryType::PrescribedVelocity)
+    {
+        double vmag = length(projectile_v_);
+        if (vmag < 1.e-12)
+        {
+            os_ << "Warning: zero projectile velocity; skipping stopping power."
+                << std::endl;
+            return;
+        }
+
+        // exclude initial transient (charge-state equilibration), per Kononov et al. (2026)
+        size_t n = stopping_dEdt_.size();
+        size_t skip = static_cast<size_t>(n * ct.stopping_window_skip);
+        size_t n0 = skip;
+        size_t n1 = n - skip;
+
+        double sum = 0.;
+        for (size_t i = n0; i < n1; ++i) sum += stopping_dEdt_[i];
+        double dEdt_avg = sum / static_cast<double>(n1 - n0);
+        double stopping_power = dEdt_avg / vmag;
+
+        os_ << std::setprecision(6)
+            << "Stopping power dE/dx = " << stopping_power << std::endl;
+
+        std::ofstream f("stopping_power_trace.dat");
+        for (size_t i = 0; i < n; ++i)
+            f << stopping_time_[i] << "  " << stopping_dEdt_[i] << "\n";
+
+        // secondary sanity check: F.v vs finite-differenced KS energy.
+        // Valid ONLY for frozen lattice + no perturbation; expected to diverge
+        // otherwise (lattice motion, ion-ion terms, or eipot contaminate energy_sc).
+        if (stopping_energy_sc_.size() > 1)
+        {
+            std::ofstream fc("stopping_power_sanity_check.dat");
+            fc << "# time   F.v   dE_sc/dt (finite diff)\n";
+            for (size_t i = 1; i < stopping_energy_sc_.size(); ++i)
+            {
+                double dEdt_fd = (stopping_energy_sc_[i] - stopping_energy_sc_[i-1])
+                                / (stopping_time_[i] - stopping_time_[i-1]);
+                fc << stopping_time_[i] << "  " << stopping_dEdt_[i]
+                   << "  " << dEdt_fd << "\n";
+            }
+        }
+    }
+    else // SelfConsistent — output raw (E_kin, F.v) trace, no averaging, since
+         // v(t) is not constant and averaging F.v/|v| over a changing velocity
+         // would conflate energy loss at different projectile energies into
+         // one meaningless number.
+    {
+        std::ofstream f("stopping_power_trace_selfconsistent.dat");
+        f << "# time   E_kin   F.v\n";
+        for (size_t i = 0; i < stopping_dEdt_.size(); ++i)
+            f << stopping_time_[i] << "  " << stopping_Ekin_[i]
+              << "  " << stopping_dEdt_[i] << "\n";
+
+        os_ << "Self-consistent stopping trace written to "
+               "stopping_power_trace_selfconsistent.dat "
+               "(post-process as S(E) = F.v / v(E))." << std::endl;
+    }
+}
+
+template <class OrbitalsType>
+void MGmol<OrbitalsType>::finalizeDipole()
+{
+    if (dipole_moment_.empty()) return;
+    
+    if (onpe0)
+    {
+        std::ofstream f("dipole_trace.dat");
+        f << "# time   mu_x   mu_y   mu_z\n";
+        for (size_t i = 0; i < dipole_time_.size(); ++i)
+            f << dipole_time_[i] << "  " << dipole_moment_[i][0] << "  "
+            << dipole_moment_[i][1] << "  " << dipole_moment_[i][2] << "\n";
+    }
+}
+
 /* Finalize MD ionic stepper */
 template <class OrbitalsType>
 void MGmol<OrbitalsType>::mdFinalize()
 {
+    Control& ct = *(Control::instance());
+
+    if (ct.AtomsDynamic() == AtomsDynamicType::TDDFT)
+    {
+        if (ct.track_stopping)       finalizeStoppingPower();
+        if (ct.track_induced_dipole) finalizeDipole();
+    }
+
     stepper_.reset();
     md_files_.reset();
 }

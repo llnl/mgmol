@@ -57,6 +57,10 @@ class IonicAlgorithm;
 
 #include <memory>
 
+template <class OrbitalsType, class MatrixType>
+Vector3D computeDipoleMomentVector(const OrbitalsType& orbitals, Ions& ions,
+    ProjectedMatrices<MatrixType>& projmatrices, bool print_stats);
+
 template <class OrbitalsType>
 class MGmol : public MGmolInterface
 {
@@ -168,6 +172,30 @@ private:
     static Timer get_Hpsi_and_Hij_tm_;
     static Timer comp_res_tm_;
     static Timer init_nuc_tm_;
+
+    /* TDDFT */
+    bool found_projectile_ = false;
+    int  projectile_index_ = -1;
+    std::shared_ptr<Ion> projectile_ion_;
+    /* projectile position and velocity - PrescribedVelocity mode only */
+    Vector3D projectile_x0_;
+    Vector3D projectile_v_;
+
+    std::vector<double> stopping_time_;
+    std::vector<double> stopping_dEdt_;   // F.v, both trajectory modes
+    std::vector<double> stopping_Ekin_;   // self_consistent only: pairs with stopping_dEdt_
+
+    /* diagnostic, prescribed_velocity + frozen lattice + no perturbation only */
+    std::vector<double> stopping_energy_sc_;
+
+    std::vector<double> dipole_time_;
+    std::vector<Vector3D> dipole_moment_;
+
+    void discoverProjectile(Ions& ions);
+    void accumulateStoppingPower(double t, Ions& ions);
+    void finalizeStoppingPower();
+    void accumulateDipole(double t, OrbitalsType& orbitals, Ions& ions); 
+    void finalizeDipole();    
 
 public:
     std::shared_ptr<Electrostatic> electrostat_;
@@ -315,6 +343,7 @@ public:
     short geomOptimCheckTolForces(const double tol_force);
 
     void finalEnergy() override;
+    double finalEnergy(Orbitals* orbitals) override;
     void printMM();
 
     void projectOutKernel(OrbitalsType& phi);
@@ -353,7 +382,10 @@ public:
     {
         return ions_;
     }
-
+    
+    /* TDDFT */
+    void recordStoppingEnergySample(double energy_sc) override; // called from driver, after evaluateTotal
+    void updatePerturbationField(double t) override;
     /* Functions for MD Ionic stepper */
     void checkMaxForces(const std::vector<double>& fion,
         const std::vector<short>& atmove, std::ostream& os);
