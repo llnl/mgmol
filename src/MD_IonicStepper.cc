@@ -122,6 +122,7 @@ double MD_IonicStepper::kineticEnergy()
 
 double MD_IonicStepper::temperature()
 {
+    if (ndofs_ <= 0) return 0.;
     return kineticEnergy() / (0.5 * ndofs_ * kb_au);
 }
 

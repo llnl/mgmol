@@ -34,8 +34,8 @@ void computeDipoleTensors(const OrbitalsType& orbitals, MatrixType& Dx,
 }
 
 template <class OrbitalsType, class MatrixType>
-void computeDipoleMoment(const OrbitalsType& orbitals, Ions& ions,
-    ProjectedMatrices<MatrixType>& projmatrices)
+Vector3D computeDipoleMomentVector(const OrbitalsType& orbitals, Ions& ions,
+    ProjectedMatrices<MatrixType>& projmatrices, bool print_stats=true)
 {
     Control& ct = *(Control::instance());
     MGmol_MPI& mmpi(*(MGmol_MPI::instance()));
@@ -51,7 +51,7 @@ void computeDipoleMoment(const OrbitalsType& orbitals, Ions& ions,
     double dy = -1. * projmatrices.getExpectation(Dy);
     double dz = -1. * projmatrices.getExpectation(Dz);
     if (mmpi.instancePE0()) std::cout << std::endl;
-    if (mmpi.instancePE0() && ct.verbose > 0)
+    if (print_stats && mmpi.instancePE0() && ct.verbose > 0)
         std::cout << "Electronic contribution to dipole = " << dx << ", " << dy
                   << ", " << dz << std::endl;
 
@@ -71,7 +71,7 @@ void computeDipoleMoment(const OrbitalsType& orbitals, Ions& ions,
     }
 
     mmpi.allreduce(&di[0], 3, MPI_SUM);
-    if (mmpi.instancePE0() && ct.verbose > 0)
+    if (print_stats && mmpi.instancePE0() && ct.verbose > 0)
         std::cout << "Ionic contribution to dipole      = " << di[0] << ", "
                   << di[1] << ", " << di[2] << std::endl;
 
@@ -79,7 +79,7 @@ void computeDipoleMoment(const OrbitalsType& orbitals, Ions& ions,
     dy += di[1];
     dz += di[2];
 
-    if (mmpi.instancePE0())
+    if (print_stats && mmpi.instancePE0())
     {
         std::cout << "Dipole moment                     = " << dx << ", " << dy
                   << ", " << dz << " a.u." << std::endl;
@@ -88,6 +88,15 @@ void computeDipoleMoment(const OrbitalsType& orbitals, Ions& ions,
                   << dy * au2D << ", " << dz * au2D << " Debye" << std::endl
                   << std::endl;
     }
+
+    return Vector3D(dx, dy, dz);
+}
+
+template <class OrbitalsType, class MatrixType>
+void computeDipoleMoment(const OrbitalsType& orbitals, Ions& ions,
+    ProjectedMatrices<MatrixType>& projmatrices)
+{
+    computeDipoleMomentVector(orbitals, ions, projmatrices);
 }
 
 template void
@@ -97,3 +106,10 @@ computeDipoleMoment<ExtendedGridOrbitals<ORBDTYPE>, ReplicatedMatrix>(
 template void computeDipoleMoment<LocGridOrbitals<ORBDTYPE>, ReplicatedMatrix>(
     const LocGridOrbitals<ORBDTYPE>& orbitals, Ions& ions,
     ProjectedMatrices<ReplicatedMatrix>&);
+template Vector3D
+computeDipoleMomentVector<ExtendedGridOrbitals<ORBDTYPE>, ReplicatedMatrix>(
+    const ExtendedGridOrbitals<ORBDTYPE>& orbitals, Ions& ions,
+    ProjectedMatrices<ReplicatedMatrix>&, bool print_stats);
+template Vector3D computeDipoleMomentVector<LocGridOrbitals<ORBDTYPE>, ReplicatedMatrix>(
+    const LocGridOrbitals<ORBDTYPE>& orbitals, Ions& ions,
+    ProjectedMatrices<ReplicatedMatrix>&, bool print_stats);

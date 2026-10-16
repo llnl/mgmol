@@ -209,7 +209,7 @@ public:
     void initialize(Ions& ions);
 
     /*!
-     * Setup linear potential based on values of exetrostatic field ex, ey, ez
+     * Setup linear potential based on values of electrostatic field ex, ey, ez
      */
     void setupVefield(const double ex, const double ey, const double ez);
 

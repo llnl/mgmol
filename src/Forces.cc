@@ -702,7 +702,7 @@ template <class OrbitalsType>
 void Forces<OrbitalsType>::dVsdRhoComponent(
     OrbitalsType& orbitals, const Ions& ions)
 {
-    assert(rho_.size() == 1);
+    assert(rho_->rho_.size() == 1);
 
     MGmol_MPI& mmpi = *(MGmol_MPI::instance());
 
