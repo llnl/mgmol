@@ -149,7 +149,7 @@ int read_config(int argc, char** argv, po::variables_map& vm,
             po::value<short>()->default_value(-1), "last MD step")("MD.dt",
             po::value<float>(), "time step for MD (a.u.)")("MD.print_interval",
             po::value<short>()->default_value(1),
-            "print intervale for MD data")("MD.print_directory",
+            "print interval for MD data")("MD.print_directory",
             po::value<std::string>()->default_value("MD"),
             "print directory for MD data")("MD.thermostat",
             po::value<std::string>()->default_value("OFF"),
@@ -164,7 +164,55 @@ int read_config(int argc, char** argv, po::variables_map& vm,
             "GeomOpt.max_steps", po::value<short>()->default_value(1),
             "max. number of Geometry optimization steps")("GeomOpt.dt",
             po::value<float>(),
-            "Delta t for trial pseudo-time steps")("Thermostat.type",
+            "Delta t for trial pseudo-time steps")
+            // --- TDDFT top-level ---
+            ("TDDFT.dt",
+            po::value<float>()->default_value(0.01f),
+            "Electronic timestep for RT-TDDFT propagation (a.u.)")
+            ("TDDFT.nsteps",
+            po::value<short>()->default_value(1000),
+            "Number of RT-TDDFT propagation steps")
+            ("TDDFT.print_interval",
+            po::value<short>()->default_value(1),
+            "Print interval for TDDFT data")  
+            ("TDDFT.print_directory",
+            po::value<std::string>()->default_value("MD"),
+            "print directory for TDDFT data") 
+            // --- TDDFT projectile_name ---
+            ("TDDFT.projectile_name",
+            po::value<std::string>()->default_value(""),
+            "Projectile ion name")
+            // --- TDDFT Trajectory ---
+            ("TDDFT.trajectory_type",
+            po::value<std::string>()->default_value("self_consistent"),
+            "Ion trajectory mode: self_consistent | prescribed_velocity")
+            // --- TDDFT.Perturbation ---
+            ("TDDFT.Perturbation.type",
+            po::value<std::string>()->default_value("none"),
+            "Driving field: none | delta_kick | gaussian_pulse")
+            ("TDDFT.Perturbation.amplitude",
+            po::value<float>()->default_value(0.0),
+            "Field amplitude (a.u.)")
+            ("TDDFT.Perturbation.direction",
+            po::value<std::string>()->default_value("1 0 0"),
+            "Fixed polarization direction, space-separated x y z (0/1 per axis, combinations allowed)")
+            ("TDDFT.Perturbation.t_center",
+            po::value<float>()->default_value(0.0),
+            "Gaussian pulse center time (a.u.); unused if type=delta_kick")
+            ("TDDFT.Perturbation.width",
+            po::value<float>()->default_value(1.0),
+            "Gaussian pulse width/sigma (a.u.); unused if type=delta_kick")
+            // --- TDDFT Observables ---
+            ("TDDFT.track_induced_dipole",
+            po::value<bool>()->default_value(false),
+            "Track time-dependent induced dipole moment during RT-TDDFT propagation")
+            ("TDDFT.track_stopping",
+            po::value<bool>()->default_value(false),
+            "Accumulate electronic stopping power along a prescribed-velocity trajectory")
+            ("TDDFT.stopping_window_skip",
+            po::value<float>()->default_value(0.1),
+            "Fraction of the stopping trace dropped from each end before averaging")
+            ("Thermostat.type",
             po::value<std::string>()->default_value("Langevin"),
             "Thermostat type")("Thermostat.temperature",
             po::value<float>()->default_value(-1.), "Thermostat temperature")(
