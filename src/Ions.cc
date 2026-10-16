@@ -1678,6 +1678,27 @@ Ion* Ions::findLocalIon(const int index) const
     return nullptr;
 }
 
+Ion* Ions::findLocalIon(const std::string& name) const
+{
+    for (auto ion : local_ions_)
+    {
+        if (ion->compareName(name)) return ion;
+    }
+    return nullptr;
+}
+
+/* Return local index of ion. -1 if not found */
+int Ions::findLocalIndex(const std::string& name) const
+{
+    int index = 0;
+    for (auto ion : local_ions_)
+    {
+        if (ion->compareName(name)) return index;
+        index++;
+    }
+    return -1;
+}
+
 void Ions::setLocalPositions(const std::vector<double>& positions)
 {
     assert(positions.size() == 3 * local_ions_.size());
@@ -2104,11 +2125,10 @@ int Ions::read1atom(std::ifstream* tfile, const bool cell_relative)
         (*MPIdata::sout) << "movable=" << movable << std::endl;
 #endif
         int j = 0;
-        if (movable)
-        {
-            while (ss >> velocity[j++])
-                ;
-        }
+
+        // Try to read velocities
+        while (j < 3 && ss >> velocity[j])
+            j++;
 
 #ifndef NDEBUG
         (*MPIdata::sout) << "Ions::read1atom() --- Read Ion in position ("

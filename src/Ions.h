@@ -268,6 +268,9 @@ public:
     Ion* findIon(const std::string& name) const;
     Ion* findIon(const int index) const;
     Ion* findLocalIon(const int index) const;
+    Ion* findLocalIon(const std::string& name) const;
+    int  findLocalIndex(const std::string& name) const;
+
     // check if ion is in list of local ions
     bool isLocal(const std::string& ion_name) const;
 
