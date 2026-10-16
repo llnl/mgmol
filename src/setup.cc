@@ -70,7 +70,7 @@ int MGmol<OrbitalsType>::setupFromInput(const std::string filename)
         int count        = h5f_file_->countFunctionObjects(name);
         std::cout << "found " << count << " functions in restart file..."
                   << std::endl;
-        int nempty = ct.withSpin() ? count - nel : count - int(0.5 * nel);
+        int nempty = ct.withSpin() ? count - nel : int(count - (0.5 * nel));
         ct.setNempty(nempty);
     }
     ct.setNumst(myspin, nel);
