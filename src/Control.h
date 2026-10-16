@@ -18,6 +18,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "Vector3D.h"
 
 #include <mpi.h>
 
@@ -54,6 +55,7 @@ enum class AtomsDynamicType
     MD,
     LBFGS,
     FIRE,
+    TDDFT,
     UNDEFINED
 };
 
@@ -89,6 +91,20 @@ enum class PoissonFDtype
     h6,
     h8,
     h4MP
+};
+enum class TrajectoryType
+{
+    SelfConsistent,
+    PrescribedVelocity,
+    UNDEFINED
+};
+
+enum class PerturbationType 
+{ 
+    None,
+    DeltaKick,
+    GaussianPulse,
+    UNDEFINED
 };
 
 // Main control structure
@@ -543,6 +559,23 @@ public:
     // with line minimization for electronic structure optimization
     short line_min;
 
+    // TDDFT trajectory
+    TrajectoryType trajectory_type_;
+
+    // TDDFT Perturbation
+    PerturbationType perturbation_type_;
+    float           perturbation_amplitude;
+    Vector3D         perturbation_direction;
+    float           perturbation_t_center;
+    float           perturbation_width;
+
+    // TDDFT Observables
+    bool   track_induced_dipole;
+    bool   track_stopping;
+    float  stopping_window_skip;
+    /* designated projectile ion */
+    std::string projectile_name;
+
     // temperature control
     short thermostat_type;
     float tkel;
@@ -687,7 +720,7 @@ public:
         }
     }
 
-    AtomsDynamicType AtomsDynamic()
+    AtomsDynamicType AtomsDynamic()const
     {
         switch (atoms_dyn_)
         {
@@ -699,6 +732,8 @@ public:
                 return AtomsDynamicType::LBFGS;
             case 7:
                 return AtomsDynamicType::FIRE;
+            case 10:
+                return AtomsDynamicType::TDDFT;
             default:
                 return AtomsDynamicType::UNDEFINED;
         }
@@ -748,6 +783,11 @@ public:
                 return OrthoType::UNDEFINED;
         }
     }
+
+    void setTDDFTOptions(const boost::program_options::variables_map& vm);
+    void checkTDDFTOptions(bool matching_atom_found)const;
+    TrajectoryType getTrajectoryType() const { return trajectory_type_; }
+    PerturbationType getPerturbationType() const { return perturbation_type_; }
 
     bool AtomsMove() { return (atoms_dyn_ != 0); }
 };

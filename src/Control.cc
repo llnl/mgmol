@@ -167,6 +167,17 @@ Control::Control()
     threshold_eigenvalue_gram_quench_ = -1.;
     pair_mlwf_distance_threshold_     = -1.;
 
+    /* TDDFT initialization */
+    trajectory_type_ = TrajectoryType::SelfConsistent;
+    perturbation_type_ = PerturbationType::None;
+    track_stopping = false;
+    track_induced_dipole = false;
+    stopping_window_skip  = -1.f;
+    perturbation_amplitude = 0.f;
+    perturbation_t_center  = 0.f;
+    perturbation_width     = -1.f;
+    perturbation_direction = Vector3D(0.,0.,0.);
+
     // data members set once for all (not accessible through interface)
     screening_const = 0.;
 }
@@ -345,15 +356,20 @@ void Control::print(std::ostream& os)
                    << std::endl
                    << " FIRE geometry optimization" << std::endl;
                 break;
+            case AtomsDynamicType::TDDFT:
+                os << std::endl
+                   << std::endl
+                   << " RT-TDDFT" << std::endl;
+                break;
             default:
                 os << "UNKNOWN MOLECULAR DYNAMICS METHOD" << std::endl;
         }
     }
 
-    if (!(AtomsDynamic() == AtomsDynamicType::Quench))
+    if (!(AtomsDynamic() == AtomsDynamicType::Quench) && !(AtomsDynamic() == AtomsDynamicType::TDDFT))
     {
         os << " Timestep for molecular dynamics = " << dt << std::endl;
-        if (dt <= 0.) os << " Warning: time step <= 0. !!!" << std::endl;
+        if (dt <= 0.) os << " Warning: time step <= 0. !!!" << std::endl; // Should we abort in this case? -DOK
         os << " Max. # of SC it. per MD step = " << max_electronic_steps
            << std::endl;
     }
@@ -377,7 +393,7 @@ void Control::sync(void)
     if (onpe0 && verbose > 0)
         (*MPIdata::sout) << "Control::sync()" << std::endl;
     // pack
-    const short size_short_buffer = 96;
+    const short size_short_buffer = 98;
     short* short_buffer           = new short[size_short_buffer];
     if (mype_ == 0)
     {
@@ -472,6 +488,9 @@ void Control::sync(void)
         short_buffer[93] = mg_npresmoothing_;
         short_buffer[94] = mg_npostsmoothing_;
         short_buffer[95] = compute_dipole_;
+        /* TDDFT observables */
+        short_buffer[96] = (short)track_stopping;
+        short_buffer[97] = (short)track_induced_dipole;
     }
     else
     {
@@ -491,7 +510,7 @@ void Control::sync(void)
         memset(&int_buffer[0], 0, size_int_buffer * sizeof(int));
     }
 
-    const short size_float_buffer = 48;
+    const short size_float_buffer = 52;
     float* float_buffer           = new float[size_float_buffer];
     if (mype_ == 0)
     {
@@ -542,6 +561,12 @@ void Control::sync(void)
         float_buffer[45] = ex_;
         float_buffer[46] = ey_;
         float_buffer[47] = ez_;
+        /* TDDFT options */
+        float_buffer[48] = perturbation_amplitude;
+        float_buffer[49] = perturbation_t_center;
+        float_buffer[50] = perturbation_width;
+        float_buffer[51] = stopping_window_skip;
+
     }
     else
     {
@@ -572,6 +597,9 @@ void Control::sync(void)
     mmpi.bcast(restart_file, comm_global_);
     mmpi.bcast(out_restart_file, comm_global_);
     mmpi.bcast(md_print_filename, comm_global_);
+
+    /* TDDFT options */
+    mmpi.bcast(projectile_name, comm_global_);
 
     short npot = pot_filenames_.size();
     mpirc      = MPI_Bcast(&npot, 1, MPI_SHORT, 0, comm_global_);
@@ -695,6 +723,9 @@ void Control::sync(void)
     mg_npresmoothing_  = short_buffer[93];
     mg_npostsmoothing_ = short_buffer[94];
     compute_dipole_    = short_buffer[95];
+    /* TDDFT observables */
+    track_stopping = (bool)short_buffer[96];
+    track_induced_dipole = (bool)short_buffer[97];
 
     numst    = int_buffer[0];
     nel_     = int_buffer[1];
@@ -748,6 +779,12 @@ void Control::sync(void)
     ex_                               = float_buffer[45];
     ey_                               = float_buffer[46];
     ez_                               = float_buffer[47];
+    /* TDDFT options*/
+    perturbation_amplitude  = float_buffer[48];
+    perturbation_t_center   = float_buffer[49];
+    perturbation_width      = float_buffer[50];
+    stopping_window_skip    = float_buffer[51];
+
     max_electronic_steps_loose_       = max_electronic_steps;
 
     delete[] short_buffer;
@@ -1319,6 +1356,68 @@ int Control::checkNLrange()
     return 0;
 }
 
+/* TDDFT options  */
+void Control::setTDDFTOptions(const boost::program_options::variables_map& vm)
+{
+    dt     = vm["TDDFT.dt"].as<float>();
+    num_MD_steps = vm["TDDFT.nsteps"].as<short>();
+    md_print_freq = vm["TDDFT.print_interval"].as<short>();
+    md_print_filename = vm["TDDFT.print_directory"].as<std::string>();    
+    projectile_name = vm["TDDFT.projectile_name"].as<std::string>();
+    // trajectory_type
+    std::string str = vm["TDDFT.trajectory_type"].as<std::string>();
+    if (str.compare("self_consistent") == 0)
+        trajectory_type_ = TrajectoryType::SelfConsistent;
+    if (str.compare("prescribed_velocity") == 0)
+        trajectory_type_ = TrajectoryType::PrescribedVelocity;
+    if (trajectory_type_ == TrajectoryType::UNDEFINED)
+    {
+        (*MPIdata::sout) << "Invalid value for TDDFT.trajectory_type: "
+                         << str << " (expected self_consistent | prescribed_velocity)" << std::endl;
+        MPI_Abort(comm_global_, EXIT_FAILURE);
+    }
+    // perturbation_type
+    str = vm["TDDFT.Perturbation.type"].as<std::string>();
+    if (str.compare("none") == 0)
+        perturbation_type_ = PerturbationType::None;
+    if (str.compare("delta_kick") == 0)
+        perturbation_type_ = PerturbationType::DeltaKick;
+    if (str.compare("gaussian_pulse") == 0)
+        perturbation_type_ = PerturbationType::GaussianPulse;
+    if (perturbation_type_ == PerturbationType::UNDEFINED)
+    {
+        (*MPIdata::sout) << "Invalid value for TDDFT.Perturbation.type: "
+                         << str << " (expected none | delta_kick | gaussian_pulse)" << std::endl;
+        MPI_Abort(comm_global_, EXIT_FAILURE);
+    }
+
+    perturbation_amplitude  = vm["TDDFT.Perturbation.amplitude"].as<float>();
+    perturbation_t_center   = vm["TDDFT.Perturbation.t_center"].as<float>();
+    perturbation_width      = vm["TDDFT.Perturbation.width"].as<float>();
+
+    // direction: three 0/1 flags, validated inline, then normalized
+    str = vm["TDDFT.Perturbation.direction"].as<std::string>();
+    {
+        std::istringstream iss(str);
+        int dx, dy, dz;
+        if (!(iss >> dx >> dy >> dz)
+            || (dx != 0 && dx != 1) || (dy != 0 && dy != 1) || (dz != 0 && dz != 1)
+            || (dx == 0 && dy == 0 && dz == 0))
+        {
+            (*MPIdata::sout) << "Invalid value for TDDFT.Perturbation.direction: "
+                             << str << std::endl;
+            MPI_Abort(comm_global_, EXIT_FAILURE);
+        }
+        Vector3D v(static_cast<double>(dx), static_cast<double>(dy),
+            static_cast<double>(dz));
+        perturbation_direction = normalized(v);
+    }
+
+    track_induced_dipole = vm["TDDFT.track_induced_dipole"].as<bool>() ? 1 : 0;
+    track_stopping       = vm["TDDFT.track_stopping"].as<bool>() ? 1 : 0;
+    stopping_window_skip = vm["TDDFT.stopping_window_skip"].as<float>();
+}
+
 // set internal flags from read boost options
 void Control::setOptions(const boost::program_options::variables_map& vm)
 {
@@ -1752,11 +1851,17 @@ void Control::setOptions(const boost::program_options::variables_map& vm)
             str = vm["GeomOpt.type"].as<std::string>();
             if (str.compare("LBFGS") == 0) atoms_dyn_ = 6;
             if (str.compare("FIRE") == 0) atoms_dyn_ = 7;
-            dt = vm["GeomOpt.dt"].as<float>();
 
             num_MD_steps = vm["GeomOpt.max_steps"].as<short>();
             tol_forces   = vm["GeomOpt.tol"].as<float>();
             dt           = vm["GeomOpt.dt"].as<float>();
+        }
+
+        if (str.compare("TDDFT") == 0)
+        {
+            atoms_dyn_ = 10;
+            thermostat_type = 0;
+            setTDDFTOptions(vm);
         }
 
         nempty_ = vm["Orbitals.nempty"].as<short>();
@@ -1889,6 +1994,57 @@ void Control::setOptions(const boost::program_options::variables_map& vm)
 
     // synchronize all processors
     sync();
+}
+
+/* Check TDDFT Options */
+void Control::checkTDDFTOptions(bool matching_atom_found) const
+{
+    if (AtomsDynamic() != AtomsDynamicType::TDDFT) return;
+    
+    if (track_stopping && projectile_name.empty())
+    {
+        (*MPIdata::sout) << "Error: TDDFT.track_stopping=true requires "
+                             "TDDFT.projectile_name to be set." << std::endl;
+        MPI_Abort(comm_global_, EXIT_FAILURE);
+    }
+
+    /* Trajectory consistency */
+    if ((track_stopping || getTrajectoryType() == TrajectoryType::PrescribedVelocity)
+        && !projectile_name.empty() && !matching_atom_found)
+    {
+        std::cerr << "Error: TDDFT.projectile_name = " << projectile_name
+                  << " but no matching atom was found in the coordinate file."
+                  << std::endl;
+        MPI_Abort(comm_global_, EXIT_FAILURE);
+    }
+    /* Perturbation consistency */
+    if (getPerturbationType() == PerturbationType::GaussianPulse && perturbation_width <= 0.f)
+    {
+        (*MPIdata::sout) << "Invalid value for TDDFT.Perturbation.width: "
+                         << perturbation_width << std::endl;
+        MPI_Abort(comm_global_, EXIT_FAILURE);
+    }
+    /* window threshold */
+    if (stopping_window_skip < 0.f || stopping_window_skip >= 0.5f)
+    {
+        std::cerr << "Error: TDDFT.stopping_window_skip must be in [0, 0.5)"
+                  << std::endl;
+        MPI_Abort(comm_global_, EXIT_FAILURE);
+    }
+
+    // TDDFT.Perturbation is a time-dependent field on top of the electronic
+    // structure; it is not currently supported in combination with a static
+    // background field (ex_/ey_/ez_), which would change the unperturbed
+    // electronic structure itself.
+    if (getPerturbationType() != PerturbationType::None
+        && (ex_ != 0. || ey_ != 0. || ez_ != 0.))
+    {
+        (*MPIdata::sout) << "Error: TDDFT.Perturbation cannot be combined with "
+                             "a static Vext field (ex_/ey_/ez_ nonzero); set "
+                             "ex_=ey_=ez_=0 for TDDFT runs with a perturbation."
+                          << std::endl;
+        MPI_Abort(comm_global_, EXIT_FAILURE);
+    }    
 }
 
 int Control::checkOptions()
