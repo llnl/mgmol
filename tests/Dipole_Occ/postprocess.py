@@ -14,11 +14,13 @@ e_max_rom = 0.00010
 e_num_increment_rom = 2
 r_min = 6
 r_max = 18
+fix_ref = True
 
 d_init = []
 d_rom = []
 valid_r = []
 r_values = list(range(r_min, r_max + 1))
+ref_dipole = None
 
 for r in r_values:
   ref_filename = f"ref_results_{r}_{ex_test:.5f}_{ey_test:.5f}_{ez_test:.5f}.out"
@@ -27,8 +29,6 @@ for r in r_values:
       f"_{ex_init:.5f}_{ey_init:.5f}_{ez_init:.5f}"
       f"_{e_min_rom:.5f}_{e_max_rom:.5f}_{e_num_increment_rom}.out"
   )
-  print(ref_filename)
-  print(online_filename)
 
   ref_files = glob.glob(ref_filename)
   online_files = glob.glob(online_filename)
@@ -36,14 +36,17 @@ for r in r_values:
   if not ref_files or not online_files:
     continue
 
-  ref_dipole = None
-  with open(ref_files[0], "r") as f:
-    for line in f:
-      if "Dipole moment" in line and "Debye" in line:
-        match = re.findall(r"[-+]?\d*\.\d+|\d+", line)
-        if len(match) >= 3:
-          ref_dipole = np.array([float(match[0]), float(match[1]), float(match[2])])
-          break
+  if not fix_ref:
+    ref_dipole = None
+
+  if ref_dipole is None:
+    with open(ref_files[0], "r") as f:
+      for line in f:
+        if "Dipole moment" in line and "Debye" in line:
+          match = re.findall(r"[-+]?\d*\.\d+|\d+", line)
+          if len(match) >= 3:
+            ref_dipole = np.array([float(match[0]), float(match[1]), float(match[2])])
+            break
 
   online_dipoles = []
   with open(online_files[0], "r") as f:
