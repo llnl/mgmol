@@ -210,6 +210,10 @@ public:
         const std::vector<double>& tau, const std::vector<short>& atnumbers,
         std::vector<double>& forces) override;
 
+    void evaluateDipoleMoment(Orbitals* orbitals,
+        const std::vector<double>& tau,
+        const std::vector<short>& atnumbers) override;
+
     /*
      * get internal atomic positions
      */
