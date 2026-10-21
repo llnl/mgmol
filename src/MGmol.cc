@@ -22,6 +22,7 @@
 #include "DFTsolver.h"
 #include "DMStrategyFactory.h"
 #include "DavidsonSolver.h"
+#include "DipoleMoment.h"
 #include "Electrostatic.h"
 #include "Energy.h"
 #include "EnergySpreadPenalty.h"
@@ -1585,6 +1586,27 @@ double MGmol<OrbitalsType>::evaluateDMandEnergyAndForces(Orbitals* orbitals,
     ions.getForces(forces);
 
     return eks;
+}
+
+template <class OrbitalsType>
+void MGmol<OrbitalsType>::evaluateDipoleMoment(Orbitals* orbitals,
+    const std::vector<double>& tau, const std::vector<short>& atnumbers)
+{
+    OrbitalsType* dorbitals = dynamic_cast<OrbitalsType*>(orbitals);
+
+    // create a new temporary Ions object to be used for
+    // dipole moment calculation
+    Mesh* mymesh            = Mesh::instance();
+    const pb::Grid& mygrid  = mymesh->grid();
+    const double lattice[3] = { mygrid.ll(0), mygrid.ll(1), mygrid.ll(2) };
+    Ions ions(tau, atnumbers, lattice, ions_->getSpecies());
+
+    ProjectedMatrices<ReplicatedMatrix>* projmatrices
+        = dynamic_cast<ProjectedMatrices<ReplicatedMatrix>*>(
+            proj_matrices_.get());
+    assert(projmatrices != nullptr);
+
+    computeDipoleMoment(*dorbitals, ions, *projmatrices);
 }
 
 template class MGmol<LocGridOrbitals<ORBDTYPE>>;

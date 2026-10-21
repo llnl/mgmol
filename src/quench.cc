@@ -22,6 +22,7 @@
 #include "DFTsolver.h"
 #include "DMStrategy.h"
 #include "DavidsonSolver.h"
+#include "DipoleMoment.h"
 #include "Electrostatic.h"
 #include "Energy.h"
 #include "Hamiltonian.h"
@@ -47,10 +48,6 @@
 #ifdef MGMOL_USE_SCALAPACK
 #include "OrbitalsTransform.h"
 #endif
-
-template <class OrbitalsType, class MatrixType>
-void computeDipoleMoment(const OrbitalsType& orbitals, Ions& ions,
-    ProjectedMatrices<MatrixType>& projmatrices);
 
 #define TEST_ENERGY 0
 

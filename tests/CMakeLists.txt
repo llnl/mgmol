@@ -543,6 +543,15 @@ add_test(NAME testDipole
          ${CMAKE_CURRENT_SOURCE_DIR}/Dipole/efield.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/Dipole/h2o.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
+add_test(NAME testDipoleDriver
+         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/DipoleDriver/test.py
+         ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
+         ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
+         ${CMAKE_CURRENT_BINARY_DIR}/../drivers/computeDipole
+         ${CMAKE_CURRENT_SOURCE_DIR}/DipoleDriver/mgmol.cfg
+         ${CMAKE_CURRENT_SOURCE_DIR}/DipoleDriver/efield.cfg
+         ${CMAKE_CURRENT_SOURCE_DIR}/DipoleDriver/h2o.in
+         ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME Davidson
          COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Davidson/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
