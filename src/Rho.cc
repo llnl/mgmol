@@ -66,6 +66,8 @@ template <class OrbitalsType>
 void Rho<OrbitalsType>::setup(const OrthoType orbitals_type,
     const std::vector<std::vector<int>>& orbitals_indexes)
 {
+    Control& ct = *(Control::instance());
+
     if (verbosity_level_ > 2 && onpe0)
         (*MPIdata::sout) << " Rho<OrbitalsType>::setup()" << std::endl;
 
@@ -73,7 +75,7 @@ void Rho<OrbitalsType>::setup(const OrthoType orbitals_type,
 
     orbitals_indexes_ = orbitals_indexes;
 
-    iterative_index_ = -1;
+    if (ct.restart_info <= 1) iterative_index_ = -1;
 }
 
 template <class OrbitalsType>
