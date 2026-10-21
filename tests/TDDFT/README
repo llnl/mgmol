@@ -1,4 +1,0 @@
-Run command:
-srun -ppdebug -n4 ./<path-to-mgmol-build>/tests/testTDDFT -c mgmol.cfg -i coords.in -l lrs.in >! test.out
-
-Driver will generate outfile.txt, containing a space separated output of some quantities interest.

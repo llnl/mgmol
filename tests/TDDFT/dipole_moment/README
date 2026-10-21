@@ -1,0 +1,10 @@
+#
+#1. Run initialization command:
+srun -ppdebug -n4 ./<path-to-mgmol-build>/tests/TDDFTinit -c mgmol_init.cfg -i coords.in >! tddft_init.out
+
+#2. Run TDDFT command:
+srun -ppdebug -n4 ./<path-to-mgmol-build>/tests/TDDFTrun -c tddft.cfg >! tddft_run.out
+
+Driver will generate:
+* outfile.txt, containing a space separated output of some quantities interest.
+* dipole_trace.dat, containing the trace of the dipole moment in time.
