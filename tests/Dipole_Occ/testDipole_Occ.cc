@@ -138,6 +138,7 @@ int main(int argc, char** argv)
 
         HDFrestart h5file(ct.restart_file, myPEenv, ct.restart_file_type);
         orbitals.read_hdf5(h5file);
+        orbitals.setIterativeIndex(orbitals.getIterativeIndex() + 1000);
 
         // evaluate dipole moment with wavefunctions
         // frozen to solution of previous problem
