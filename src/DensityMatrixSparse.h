@@ -44,6 +44,7 @@ public:
     ~DensityMatrixSparse();
 
     void setUniform(const double nel);
+    void setAufbau(const double nel);
 
     void setto2InvS(const VariableSizeMatrix<sparserow>& invS);
     int getIndex() const { return update_index_; }

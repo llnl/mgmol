@@ -56,7 +56,15 @@ public:
 
     ~DensityMatrix();
 
+    /*!
+     * initialize with same occupation in all states
+     */
     void setUniform(const double nel);
+
+    /*!
+     * initialize by occupying lowest states
+     */
+    void setAufbau(const double nel);
 
     int getIndex() const { return update_index_; }
 

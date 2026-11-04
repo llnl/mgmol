@@ -56,6 +56,29 @@ void DensityMatrixSparse::setUniform(const double nel)
         (*dm_).insertMatrixElement(*st, *st, uval, INSERT, true);
 }
 
+void DensityMatrixSparse::setAufbau(const double nel)
+{
+    dm_->reset();
+    double sum                          = 0;
+    std::vector<int>::const_iterator st = locvars_.begin();
+    while (sum <= nel - 1)
+    {
+        dm_->insertMatrixElement(*st, *st, 1, INSERT, true);
+        st++;
+        sum += 1;
+    }
+    if (st != locvars_.end())
+    {
+        dm_->insertMatrixElement(*st, *st, nel - sum, INSERT, true);
+        st++;
+    }
+    while (st != locvars_.end())
+    {
+        dm_->insertMatrixElement(*st, *st, 0, INSERT, true);
+        st++;
+    }
+}
+
 void DensityMatrixSparse::setto2InvS(const VariableSizeMatrix<sparserow>& invS)
 {
     *dm_ = invS;

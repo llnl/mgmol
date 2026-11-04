@@ -215,7 +215,13 @@ public:
         assert(dm_);
         return dm_->getIndex();
     }
+
+    /*
+     * Initialize DM by setting diagonal
+     */
     void setDMuniform(const double nel) override { dm_->setUniform(nel); }
+    void setDMaufbau(const double nel) override { dm_->setAufbau(nel); }
+
     int dim() const { return dim_; }
 
     void computeInvS() override;
