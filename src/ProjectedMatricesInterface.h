@@ -202,7 +202,9 @@ public:
     virtual void updateTheta()                     = 0;
     virtual void computeInvB()                     = 0;
     virtual void printGramMM(std::ofstream& tfile) = 0;
-    virtual void setDMuniform(const double nel)    = 0;
+
+    virtual void setDMuniform(const double nel) = 0;
+    virtual void setDMaufbau(const double nel)  = 0;
 
     virtual double dotProductWithInvS(
         const SquareLocalMatrices<MATDTYPE, MemorySpace::Host>& ss)

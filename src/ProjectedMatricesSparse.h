@@ -171,6 +171,7 @@ public:
         //    (*matHB_).scale(vel_);
     }
     void setDMuniform(const double nel) override { dm_->setUniform(nel); }
+    void setDMaufbau(const double nel) override { dm_->setAufbau(nel); }
 
     int getDMMatrixIndex() const override
     {

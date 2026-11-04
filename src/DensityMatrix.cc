@@ -175,6 +175,42 @@ void DensityMatrix<MatrixType>::setUniform(const double nel)
 }
 
 template <class MatrixType>
+void DensityMatrix<MatrixType>::setAufbau(const double nel)
+{
+    assert(!occupation_.empty());
+
+    MGmol_MPI& mmpi = *(MGmol_MPI::instance());
+    if (mmpi.instancePE0())
+        std::cout << "DensityMatrix::setAufbau() " << std::endl;
+
+    double sum     = 0;
+    unsigned int i = 0;
+    while (sum <= nel - 1)
+    {
+        occupation_[i] = 1;
+        i++;
+        sum += 1;
+    }
+
+    if (i < occupation_.size())
+    {
+        occupation_[i] = nel - sum;
+        i++;
+    }
+    while (i < occupation_.size())
+    {
+        occupation_[i] = 0;
+        i++;
+    }
+
+    occ_uptodate_ = true;
+
+    uniform_occ_ = true;
+
+    build(occupation_);
+}
+
+template <class MatrixType>
 void DensityMatrix<MatrixType>::rotate(
     const MatrixType& rotation_matrix, const bool flag_eigen)
 {
