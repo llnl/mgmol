@@ -27,7 +27,7 @@ class Mesh
     static unsigned ngpts_[3];
     static double origin_[3];
     static double lattice_[3];
-    static int lap_type_;
+    static pb::LapType lap_type_;
 
     // nb. subdivision of grid in direction 0
     static int subdivx_;
@@ -57,7 +57,6 @@ class Mesh
 public:
     static Mesh* instance()
     {
-        assert(lap_type_ >= 0);
         if (pinstance_ == nullptr)
         {
             pinstance_ = new Mesh();
@@ -72,7 +71,8 @@ public:
     }
 
     static void setup(MPI_Comm comm, const unsigned ngpts[3],
-        const double origin[3], const double lattice[3], const int lap_type)
+        const double origin[3], const double lattice[3],
+        const pb::LapType lap_type)
     {
         assert(pinstance_ == NULL);
         assert(ngpts[0] > 0);
@@ -81,13 +81,6 @@ public:
         assert(lattice[0] > 1.e-3);
         assert(lattice[1] > 1.e-3);
         assert(lattice[2] > 1.e-3);
-        assert(lap_type >= 0);
-        if (!(lap_type == 0 || lap_type == 1 || lap_type == 2 || lap_type == 3
-                || lap_type == 4 || lap_type == 10))
-        {
-            (*MPIdata::sout)
-                << "Mesh::setup() -> Invalid Laplacian type" << std::endl;
-        }
         comm_ = comm;
         for (int i = 0; i < 3; i++)
         {

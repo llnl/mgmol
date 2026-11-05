@@ -22,7 +22,7 @@ class Potentials;
 
 class Electrostatic
 {
-    PoissonFDtype laptype_;
+    pb::LapType laptype_;
     short bc_[3];
     pb::Grid* pbGrid_;
     bool diel_flag_;
@@ -42,7 +42,7 @@ class Electrostatic
     static Timer solve_tm_;
 
 public:
-    Electrostatic(PoissonFDtype lap_type, const short bc[3],
+    Electrostatic(pb::LapType lap_type, const short bc[3],
         const double screening_const = 0.);
     ~Electrostatic();
     static Timer solve_tm() { return solve_tm_; }

@@ -2383,29 +2383,29 @@ void GridFuncVector<ScalarType, MemorySpaceType>::trade_boundaries_colors(
 
 template <typename ScalarType, typename MemorySpaceType>
 void GridFuncVector<ScalarType, MemorySpaceType>::applyLap(
-    const int type, GridFuncVector<ScalarType, MemorySpaceType>& rhs)
+    const LapType type, GridFuncVector<ScalarType, MemorySpaceType>& rhs)
 {
     switch (type)
     {
         // Laph4M
-        case 0:
+        case LapType::Mehrstellen1:
             this->del2_4th_Mehr(rhs);
             break;
         // Laph2
-        case 1:
+        case LapType::FD2nd:
             this->del2_2nd(rhs);
             break;
-        case 2:
+        case LapType::FD4th:
             this->del2_4th(rhs);
             break;
-        case 3:
+        case LapType::FD6th:
             this->del2_6th(rhs);
             break;
-        case 4:
+        case LapType::FD8th:
             this->del2_8th(rhs);
             break;
         default:
-            std::cerr << "LapFactory::createLap() --- option invalid:" << type
+            std::cerr << "GridFuncVector::applyLap() --- option invalid"
                       << std::endl;
             abort();
     }
@@ -2413,10 +2413,10 @@ void GridFuncVector<ScalarType, MemorySpaceType>::applyLap(
 
 template <typename ScalarType, typename MemorySpaceType>
 void GridFuncVector<ScalarType, MemorySpaceType>::applyRHS(
-    const int type, GridFuncVector<ScalarType, MemorySpaceType>& rhs)
+    const LapType type, GridFuncVector<ScalarType, MemorySpaceType>& rhs)
 {
     // Laph4M
-    if (type == 0)
+    if (type == LapType::Mehrstellen1)
     {
         this->rhs_4th_Mehr1(rhs);
     }
@@ -2428,7 +2428,7 @@ void GridFuncVector<ScalarType, MemorySpaceType>::applyRHS(
 }
 
 template <typename ScalarType, typename MemorySpaceType>
-void GridFuncVector<ScalarType, MemorySpaceType>::jacobi(const int type,
+void GridFuncVector<ScalarType, MemorySpaceType>::jacobi(const LapType type,
     const GridFuncVector<ScalarType, MemorySpaceType>& B,
     GridFuncVector<ScalarType, MemorySpaceType>& w, const double jacobiFactor)
 {

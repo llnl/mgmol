@@ -10,6 +10,7 @@
 #ifndef MGMOL_PCG_SOLVER_DIEL_H_
 #define MGMOL_PCG_SOLVER_DIEL_H_
 
+#include "Lap.h"
 #include "PB.h"
 #include "PBh2.h"
 #include "PBh4.h"
@@ -17,6 +18,7 @@
 #include "PBh4MP.h"
 #include "PBh6.h"
 #include "PBh8.h"
+#include "Poisson.h"
 
 #include <vector>
 
@@ -30,7 +32,7 @@ private:
     // operators
     T oper_;
     std::vector<T*> pc_oper_;
-    const short lap_type_;
+    const pb::LapType lap_type_;
     std::vector<pb::GridFunc<ScalarType>*> gf_work_;
     std::vector<pb::GridFunc<ScalarType>*> gf_rcoarse_;
     std::vector<pb::GridFunc<ScalarType>*> gf_newv_;
@@ -52,7 +54,7 @@ private:
         const pb::GridFunc<ScalarType>& gf_f, const short level = 0);
 
 public:
-    PCGSolver_Diel(T& oper, const short lap_type, const short px,
+    PCGSolver_Diel(T& oper, const pb::LapType lap_type, const short px,
         const short py, const short pz)
         : oper_(oper), lap_type_(lap_type)
     {

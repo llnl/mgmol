@@ -50,7 +50,7 @@ private:
     std::vector<pb::GridFuncVector<T, memory_space_type>*> gfv_newv_;
 
 public:
-    Preconditioning(const short lap_type, const short maxlevels,
+    Preconditioning(const pb::LapType lap_type, const short maxlevels,
         const short npresmooth, const short npostsmooth, const pb::Grid& grid,
         const short bc[3]);
 
@@ -63,7 +63,7 @@ public:
     void reset(const std::vector<std::vector<int>>& overlapping_gids);
     void mg(pb::GridFuncVector<T, memory_space_type>& gf_v,
         const pb::GridFuncVector<T, memory_space_type>& gf_f,
-        const short lap_type, const short level);
+        const pb::LapType lap_type, const short level);
     short max_levels() const { return max_levels_; }
 };
 #endif

@@ -11,9 +11,9 @@
 #include "LapFactory.h"
 
 template <typename T>
-Preconditioning<T>::Preconditioning(const short lap_type, const short maxlevels,
-    const short npresmooth, const short npostsmooth, const pb::Grid& grid,
-    const short bcWF[3])
+Preconditioning<T>::Preconditioning(const pb::LapType lap_type,
+    const short maxlevels, const short npresmooth, const short npostsmooth,
+    const pb::Grid& grid, const short bcWF[3])
     : max_levels_(maxlevels), npresmooth_(npresmooth), npostsmooth_(npostsmooth)
 {
     assert(npresmooth_ >= 0);
@@ -113,7 +113,8 @@ void Preconditioning<T>::setup(
         grid_.push_back(coarse_grid);
 
         // use 2nd order FD operator
-        pb::Lap<T>* myoper = LapFactory<T>::createLap(*coarse_grid, 1);
+        pb::Lap<T>* myoper
+            = LapFactory<T>::createLap(*coarse_grid, pb::LapType::FD2nd);
         jacobi_factor_.push_back(myoper->jacobiFactor());
 
         gf_work = new pb::GridFunc<T>(*coarse_grid, bc_[0], bc_[1], bc_[2]);
@@ -147,8 +148,8 @@ void Preconditioning<T>::setup(
 // MG V-cycle
 template <typename T>
 void Preconditioning<T>::mg(pb::GridFuncVector<T, memory_space_type>& gfv_v,
-    const pb::GridFuncVector<T, memory_space_type>& gfv_f, const short lap_type,
-    const short level)
+    const pb::GridFuncVector<T, memory_space_type>& gfv_f,
+    const pb::LapType lap_type, const short level)
 {
 #ifdef PRINT_OPERATIONS
     if (onpe0)
@@ -189,7 +190,7 @@ void Preconditioning<T>::mg(pb::GridFuncVector<T, memory_space_type>& gfv_v,
 
     // call mgrid solver on a coarser level
     newv->resetData();
-    mg(*newv, *rcoarse, 1, level + 1);
+    mg(*newv, *rcoarse, pb::LapType::FD2nd, level + 1);
 
     gfv_work_[level]->extend3D(*newv);
 

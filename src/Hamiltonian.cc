@@ -34,7 +34,7 @@ Hamiltonian<T>::~Hamiltonian()
 }
 
 template <class T>
-void Hamiltonian<T>::setup(const pb::Grid& myGrid, const int lap_type)
+void Hamiltonian<T>::setup(const pb::Grid& myGrid, const pb::LapType lap_type)
 {
     if (lapOper_ != nullptr) delete lapOper_;
     lapOper_ = LapFactory<ORBDTYPE>::createLap(myGrid, lap_type);
@@ -110,7 +110,7 @@ void Hamiltonian<T>::applyLocal(const int ncolors, T& phi, T& hphi)
     using memory_space_type = typename T::memory_space_type;
     using MultiVector = pb::GridFuncVector<OrbitalsDataType, memory_space_type>;
 
-    if (ct.lap_type != 2)
+    if (ct.lap_type() != pb::LapType::FD4th)
     {
         // need phi with ghosts
         MultiVector& gfvphi(*phi.getPtDataWGhosts());
@@ -129,14 +129,14 @@ void Hamiltonian<T>::applyLocal(const int ncolors, T& phi, T& hphi)
         if (ct.Mehrstellen())
         {
             // work1 = B*V*psi
-            tmp1.applyRHS(0, tmp2);
+            tmp1.applyRHS(pb::LapType::Mehrstellen1, tmp2);
         }
         else
         {
             tmp2.copyFrom(tmp1);
         }
         // tmp1 = -Lap*phi
-        gfvphi.applyLap(ct.lap_type, tmp1);
+        gfvphi.applyLap(ct.lap_type(), tmp1);
         // tmp2 = -Lap*phi + B*V*psi
         tmp2.axpy((OrbitalsDataType)1., tmp1);
         // set hpsi data without ghosts

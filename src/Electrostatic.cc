@@ -26,7 +26,7 @@
 
 Timer Electrostatic::solve_tm_("Electrostatic::solve");
 
-Electrostatic::Electrostatic(PoissonFDtype lap_type, const short bcPoisson[3],
+Electrostatic::Electrostatic(pb::LapType lap_type, const short bcPoisson[3],
     const double screening_const)
     : laptype_(lap_type), poisson_solver_(nullptr)
 {
@@ -132,8 +132,8 @@ void Electrostatic::setupPB(
     double origin[3] = { myGrid.origin(0), myGrid.origin(1), myGrid.origin(2) };
     double cell[3]   = { myGrid.ll(0), myGrid.ll(1), myGrid.ll(2) };
 
-    pbGrid_ = GridFactory::createGrid(
-        ngpts, origin, cell, static_cast<int>(laptype_), true, myPEenv);
+    pbGrid_
+        = GridFactory::createGrid(ngpts, origin, cell, laptype_, true, myPEenv);
     if (poisson_solver_ != nullptr) delete poisson_solver_;
 
     poisson_solver_ = PoissonSolverFactory::createDiel(
