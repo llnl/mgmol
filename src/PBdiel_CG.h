@@ -9,6 +9,7 @@
 #ifndef MGMOL_PBdiel_CG_H_
 #define MGMOL_PBdiel_CG_H_
 
+#include "Control.h"
 #include "MPIdata.h"
 #include "Poisson.h"
 
@@ -40,7 +41,7 @@ public:
         rhod_           = nullptr;
         Control& ct     = *(Control::instance());
         poisson_solver_ = new PCGSolver_Diel<T, POTDTYPE>(
-            oper, ct.lap_type, bc[0], bc[1], bc[2]);
+            oper, ct.getPoissonFDtype(), bc[0], bc[1], bc[2]);
     };
 
     // Destructor

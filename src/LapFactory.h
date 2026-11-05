@@ -16,40 +16,73 @@
 #include "Laph6.h"
 #include "Laph8.h"
 #include "MGmol_MPI.h"
+#include "Poisson.h"
 
 template <class T>
 class LapFactory
 {
 public:
-    static pb::Lap<T>* createLap(const pb::Grid& grid, const int type)
+    static pb::Lap<T>* createLap(const pb::Grid& grid, const PoissonFDtype type)
     {
         pb::Lap<T>* lap = nullptr;
         switch (type)
         {
-            case 0:
+            case PoissonFDtype::h4M:
                 lap = new pb::Laph4M<T>(grid);
                 break;
-            case 1:
+            case PoissonFDtype::h2:
                 lap = new pb::Laph2<T>(grid);
                 break;
-            case 2:
+            case PoissonFDtype::h4:
                 lap = new pb::Laph4<T>(grid);
                 break;
-            case 3:
+            case PoissonFDtype::h6:
                 lap = new pb::Laph6<T>(grid);
                 break;
-            case 4:
+            case PoissonFDtype::h8:
                 lap = new pb::Laph8<T>(grid);
                 break;
-            case 10:
+            case PoissonFDtype::h4MP:
                 lap = new pb::Laph4MP<T>(grid);
                 break;
             default:
                 MGmol_MPI& mmpi = *(MGmol_MPI::instance());
                 if (mmpi.instancePE0())
-                    std::cerr
-                        << "LapFactory::createLap() --- option invalid:" << type
-                        << std::endl;
+                    std::cerr << "LapFactory::createLap() --- option invalid:"
+                              << std::endl;
+                mmpi.abort();
+        }
+        return lap;
+    }
+
+    static pb::Lap<T>* createLap(const pb::Grid& grid, const pb::LapType type)
+    {
+        pb::Lap<T>* lap = nullptr;
+        switch (type)
+        {
+            case pb::LapType::Mehrstellen1:
+                lap = new pb::Laph4M<T>(grid);
+                break;
+            case pb::LapType::FD2nd:
+                lap = new pb::Laph2<T>(grid);
+                break;
+            case pb::LapType::FD4th:
+                lap = new pb::Laph4<T>(grid);
+                break;
+            case pb::LapType::FD6th:
+                lap = new pb::Laph6<T>(grid);
+                break;
+            case pb::LapType::FD8th:
+                lap = new pb::Laph8<T>(grid);
+                break;
+            case pb::LapType::Mehrstellen2:
+                lap = new pb::Laph4MP<T>(grid);
+                break;
+            default:
+                MGmol_MPI& mmpi = *(MGmol_MPI::instance());
+                if (mmpi.instancePE0())
+                    std::cerr << "LapFactory::createLap() --- option invalid:"
+                              << std::endl;
                 mmpi.abort();
         }
         return lap;

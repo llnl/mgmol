@@ -36,7 +36,7 @@ int MGmol<OrbitalsType>::setupFromInput(const std::string filename)
     unsigned ngpts[3]    = { ct.ngpts_[0], ct.ngpts_[1], ct.ngpts_[2] };
     double origin[3]     = { ct.ox_, ct.oy_, ct.oz_ };
     const double cell[3] = { ct.lx_, ct.ly_, ct.lz_ };
-    Mesh::setup(mmpi.commSpin(), ngpts, origin, cell, ct.lap_type);
+    Mesh::setup(mmpi.commSpin(), ngpts, origin, cell, ct.lap_type());
 
     hamiltonian_.reset(new Hamiltonian<OrbitalsType>());
     Potentials& pot = hamiltonian_->potential();
