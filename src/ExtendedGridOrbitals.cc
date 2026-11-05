@@ -32,6 +32,10 @@
 #include <mpi.h>
 #include <utility>
 
+#ifdef MGMOL_HAS_LIBROM
+#include "librom.h"
+#endif
+
 #define ORBITAL_OCCUPATION 2.
 std::string getDatasetName(const std::string& name, const int color);
 
@@ -1846,6 +1850,29 @@ void ExtendedGridOrbitals<ScalarType>::initWF(
         (*MPIdata::sout) << "ExtendedGridOrbitals::init_wf() done" << std::endl;
 #endif
 }
+
+#ifdef MGMOL_HAS_LIBROM
+template <typename ScalarType>
+void ExtendedGridOrbitals<ScalarType>::set(std::string file_path, int rdim)
+{
+    const int dim = getLocNumpt();
+
+    CAROM::BasisReader reader(file_path);
+    CAROM::Matrix* orbital_basis = reader.getSpatialBasis(rdim);
+
+    Control& ct  = *(Control::instance());
+    Mesh* mymesh = Mesh::instance();
+    pb::GridFunc<ORBDTYPE> gf_psi(
+        mymesh->grid(), ct.bcWF[0], ct.bcWF[1], ct.bcWF[2]);
+    CAROM::Vector psi;
+    for (int i = 0; i < rdim; ++i)
+    {
+        orbital_basis->getColumn(i, psi);
+        gf_psi.assign(psi.getData());
+        setPsi(gf_psi, i);
+    }
+}
+#endif
 
 template void ExtendedGridOrbitals<ORBDTYPE>::axpy(
     const ORBDTYPE alpha, const ExtendedGridOrbitals<ORBDTYPE>&);

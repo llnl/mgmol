@@ -1,0 +1,36 @@
+#!/bin/tcsh
+#SBATCH -N 1
+#SBATCH -t 0:10:00
+#SBATCH -p pdebug
+
+date
+
+setenv OMP_NUM_THREADS 1
+#setenv KMP_DETERMINISTIC_REDUCTION 1
+
+set ncpus = 8
+
+set maindir = /p/lustre2/cheung26/mgmol
+
+setenv LD_LIBRARY_PATH ${maindir}/build_quartz/libROM/build/lib:$LD_LIBRARY_PATH
+
+ln -s -f $maindir/potentials/pseudo.O_ONCV_PBE_SG15 .
+ln -s -f $maindir/potentials/pseudo.H_ONCV_PBE_SG15 .
+
+source $maindir/scripts/modules.quartz
+
+rm -rf snapshot0_*
+
+set coord_file = coords_rotate2.in
+
+set exe     = mgmol-opt
+set cfg_online = mgmol_ref_rotate.cfg
+cp $maindir/install_quartz/bin/$exe .
+srun -p pdebug -n $ncpus $exe -c $cfg_online -i $coord_file
+
+set exe     = testPinnedH2O_3DOF
+set cfg_online = mgmol_online_rotate.cfg
+cp $maindir/build_quartz/tests/$exe .
+srun -p pdebug -n $ncpus $exe -c $cfg_online -i $coord_file
+
+date
