@@ -10,6 +10,7 @@
 #ifndef MGMOL_HARTREE_CG_H
 #define MGMOL_HARTREE_CG_H
 
+#include "Control.h"
 #include "PCGSolver.h"
 #include "Poisson.h"
 
@@ -30,7 +31,7 @@ public:
         Control& ct = *(Control::instance());
         poisson_solver_
             = std::make_shared<PCGSolver<OperatorType, ScalarType, PDataType>>(
-                oper, ct.lap_type, bc[0], bc[1], bc[2]);
+                oper, ct.getPoissonFDtype(), bc[0], bc[1], bc[2]);
     };
 
     // Destructor

@@ -117,7 +117,7 @@ Control::Control()
     numst                            = -1;
     betaAnderson                     = 0.;
     diel                             = -1;
-    lap_type                         = -1;
+    lap_type_                        = pb::LapType::UNDEFINED;
     precond_type_                    = -1;
     orthof                           = -1;
     init_loc                         = -1;
@@ -386,7 +386,7 @@ void Control::sync(void)
         short_buffer[2]  = multipole_order;
         short_buffer[3]  = wf_extrapolation_;
         short_buffer[4]  = diel;
-        short_buffer[5]  = lap_type;
+        short_buffer[5]  = (short)static_cast<int>(lap_type_);
         short_buffer[6]  = precond_type_;
         short_buffer[7]  = orthof;
         short_buffer[8]  = it_algo_type_;
@@ -604,53 +604,53 @@ void Control::sync(void)
     }
 
     // unpack
-    wf_dyn                           = short_buffer[0];
-    wf_m                             = short_buffer[1];
-    multipole_order                  = short_buffer[2];
-    wf_extrapolation_                = short_buffer[3];
-    diel                             = short_buffer[4];
-    lap_type                         = short_buffer[5];
-    precond_type_                    = short_buffer[6];
-    orthof                           = short_buffer[7];
-    it_algo_type_                    = short_buffer[8];
-    num_species                      = short_buffer[9];
-    mg_levels_                       = short_buffer[10];
-    project_out_psd                  = short_buffer[11];
-    xctype                           = short_buffer[12];
-    steps                            = short_buffer[13];
-    checkpoint                       = short_buffer[14];
-    verbose                          = short_buffer[15];
-    iprint_residual                  = short_buffer[16];
-    wannier_transform_type           = short_buffer[17];
-    vh_init                          = short_buffer[18];
-    vh_its                           = short_buffer[19];
-    max_changes_pot                  = short_buffer[20];
-    tmatrices                        = short_buffer[21];
-    init_loc                         = short_buffer[22];
-    init_type                        = short_buffer[23];
-    atoms_dyn_                       = short_buffer[24];
-    max_electronic_steps             = short_buffer[25];
-    num_MD_steps                     = short_buffer[26];
-    lr_updates_type                  = short_buffer[27];
-    lr_update                        = short_buffer[28];
-    lr_volume_calc                   = short_buffer[29];
-    orbital_type_                    = short_buffer[30];
-    line_min                         = short_buffer[31];
-    thermostat_type                  = short_buffer[32];
-    bcWF[0]                          = short_buffer[33];
-    bcWF[1]                          = short_buffer[34];
-    bcWF[2]                          = short_buffer[35];
-    bcPoisson[0]                     = short_buffer[36];
-    bcPoisson[1]                     = short_buffer[37];
-    bcPoisson[2]                     = short_buffer[38];
-    short_sighted                    = short_buffer[39];
-    loc_mode_                        = (bool)short_buffer[40];
-    restart_info                     = short_buffer[41];
-    restart_file_type                = short_buffer[42];
-    out_restart_info                 = short_buffer[43];
-    out_restart_file_type            = short_buffer[44];
-    precond_factor_computed          = (bool)short_buffer[45];
-    dot_product_type                 = short_buffer[46];
+    wf_dyn                  = short_buffer[0];
+    wf_m                    = short_buffer[1];
+    multipole_order         = short_buffer[2];
+    wf_extrapolation_       = short_buffer[3];
+    diel                    = short_buffer[4];
+    lap_type_               = static_cast<pb::LapType>(short_buffer[5]);
+    precond_type_           = short_buffer[6];
+    orthof                  = short_buffer[7];
+    it_algo_type_           = short_buffer[8];
+    num_species             = short_buffer[9];
+    mg_levels_              = short_buffer[10];
+    project_out_psd         = short_buffer[11];
+    xctype                  = short_buffer[12];
+    steps                   = short_buffer[13];
+    checkpoint              = short_buffer[14];
+    verbose                 = short_buffer[15];
+    iprint_residual         = short_buffer[16];
+    wannier_transform_type  = short_buffer[17];
+    vh_init                 = short_buffer[18];
+    vh_its                  = short_buffer[19];
+    max_changes_pot         = short_buffer[20];
+    tmatrices               = short_buffer[21];
+    init_loc                = short_buffer[22];
+    init_type               = short_buffer[23];
+    atoms_dyn_              = short_buffer[24];
+    max_electronic_steps    = short_buffer[25];
+    num_MD_steps            = short_buffer[26];
+    lr_updates_type         = short_buffer[27];
+    lr_update               = short_buffer[28];
+    lr_volume_calc          = short_buffer[29];
+    orbital_type_           = short_buffer[30];
+    line_min                = short_buffer[31];
+    thermostat_type         = short_buffer[32];
+    bcWF[0]                 = short_buffer[33];
+    bcWF[1]                 = short_buffer[34];
+    bcWF[2]                 = short_buffer[35];
+    bcPoisson[0]            = short_buffer[36];
+    bcPoisson[1]            = short_buffer[37];
+    bcPoisson[2]            = short_buffer[38];
+    short_sighted           = short_buffer[39];
+    loc_mode_               = (bool)short_buffer[40];
+    restart_info            = short_buffer[41];
+    restart_file_type       = short_buffer[42];
+    out_restart_info        = short_buffer[43];
+    out_restart_file_type   = short_buffer[44];
+    precond_factor_computed = (bool)short_buffer[45];
+    dot_product_type        = short_buffer[46];
     out_restart_file_naming_strategy = short_buffer[47];
     enforceVmass0                    = short_buffer[48];
     dm_inner_steps                   = short_buffer[49];
@@ -689,7 +689,7 @@ void Control::sync(void)
     max_electronic_steps_tight_      = short_buffer[86];
     hartree_reset_                   = short_buffer[88];
     MD_last_step_                    = short_buffer[89];
-    poisson_lap_type_  = static_cast<PoissonFDtype>(short_buffer[90]);
+    poisson_lap_type_  = static_cast<pb::LapType>(short_buffer[90]);
     poisson_pc_data_   = short_buffer[91];
     precond_precision_ = short_buffer[92];
     mg_npresmoothing_  = short_buffer[93];
@@ -919,13 +919,6 @@ int Control::checkState()
         assert(ilu_droptol > 0.);
         assert(ilu_lof >= 0);
         assert(ilu_maxfil >= 0);
-    }
-    if (!(lap_type == 0 || lap_type == 1 || lap_type == 2 || lap_type == 3
-            || lap_type == 4 || lap_type == 10))
-    {
-        (*MPIdata::sout) << "Control::checkState() -> Invalid Laplacian type"
-                         << std::endl;
-        return -1;
     }
     if (lr_update > 0 && lr_volume_calc > 0 && wannier_transform_type != 2)
     {
@@ -1340,13 +1333,15 @@ void Control::setOptions(const boost::program_options::variables_map& vm)
         if (str.compare("PBE") == 0) xctype = 2;
 
         str = vm["FDtype"].as<std::string>();
-        if (str.compare("Mehrstellen") == 0) lap_type = 0;
-        if (str.compare("2nd") == 0) lap_type = 1;
-        if (str.compare("4th") == 0) lap_type = 2;
-        if (str.compare("6th") == 0) lap_type = 3;
-        if (str.compare("8th") == 0) lap_type = 4;
-        if (str.compare("Mehrstellen2") == 0) lap_type = 10;
-        assert(lap_type >= 0);
+        if (str.compare("Mehrstellen") == 0)
+            lap_type_ = pb::LapType::Mehrstellen1;
+        if (str.compare("2nd") == 0) lap_type_ = pb::LapType::FD2nd;
+        if (str.compare("4th") == 0) lap_type_ = pb::LapType::FD4th;
+        if (str.compare("6th") == 0) lap_type_ = pb::LapType::FD6th;
+        if (str.compare("8th") == 0) lap_type_ = pb::LapType::FD8th;
+        if (str.compare("Mehrstellen2") == 0)
+            lap_type_ = pb::LapType::Mehrstellen2;
+        assert(lap_type_ != pb::LapType::UNDEFINED);
 
         system_charge_ = vm["charge"].as<short>();
 
@@ -1433,14 +1428,14 @@ void Control::setOptions(const boost::program_options::variables_map& vm)
 
         // Poisson solver
         str = vm["Poisson.FDtype"].as<std::string>();
-        if (str.compare("2nd") == 0) poisson_lap_type_ = PoissonFDtype::h2;
-        if (str.compare("4th") == 0) poisson_lap_type_ = PoissonFDtype::h4;
-        if (str.compare("6th") == 0) poisson_lap_type_ = PoissonFDtype::h6;
-        if (str.compare("8th") == 0) poisson_lap_type_ = PoissonFDtype::h8;
+        if (str.compare("2nd") == 0) poisson_lap_type_ = pb::LapType::FD2nd;
+        if (str.compare("4th") == 0) poisson_lap_type_ = pb::LapType::FD4th;
+        if (str.compare("6th") == 0) poisson_lap_type_ = pb::LapType::FD6th;
+        if (str.compare("8th") == 0) poisson_lap_type_ = pb::LapType::FD8th;
         if (str.compare("Mehrstellen") == 0)
-            poisson_lap_type_ = PoissonFDtype::h4M;
+            poisson_lap_type_ = pb::LapType::Mehrstellen1;
         if (str.compare("Mehrstellen2") == 0)
-            poisson_lap_type_ = PoissonFDtype::h4MP;
+            poisson_lap_type_ = pb::LapType::Mehrstellen2;
 
         str = vm["Poisson.bcx"].as<std::string>();
         if (str.compare("0") == 0) bcPoisson[0] = 0;
@@ -1571,15 +1566,15 @@ void Control::setOptions(const boost::program_options::variables_map& vm)
         precond_factor = vm["Quench.step_length"].as<float>();
         if (precond_factor < 0.)
         {
-            switch (lap_type)
+            switch (lap_type_)
             {
-                case 0:
+                case pb::LapType::Mehrstellen1:
                 {
                     precond_factor = 2.;
                     break;
                 }
 
-                case 2:
+                case pb::LapType::FD4th:
                 {
                     precond_factor = 1.5;
                     break;
@@ -1906,7 +1901,7 @@ int Control::checkOptions()
         return -1;
     }
 
-    if (short_sighted && lap_type == 0)
+    if (short_sighted && lap_type_ == pb::LapType::Mehrstellen1)
     {
         std::cerr
             << "ERROR: Mehrstellen not compatible with Short-sighted algorithm!"
@@ -1914,7 +1909,7 @@ int Control::checkOptions()
         return -1;
     }
 
-    if (DM_solver_ > 0 && lap_type == 0)
+    if (DM_solver_ > 0 && lap_type_ == pb::LapType::Mehrstellen1)
     {
         std::cerr << "DM_solver_ = " << DM_solver_ << std::endl;
         std::cerr << "ERROR: Mehrstellen not compatible with MVP inner solvers!"
@@ -1922,7 +1917,7 @@ int Control::checkOptions()
         return -1;
     }
 
-    if (it_algo_type_ == 3 && lap_type == 0)
+    if (it_algo_type_ == 3 && lap_type_ == pb::LapType::Mehrstellen1)
     {
         std::cerr
             << "ERROR: Mehrstellen not compatible with Polak-Ribiere algorithm!"
@@ -1945,7 +1940,7 @@ int Control::checkOptions()
                   << std::endl;
         return -1;
     }
-    if (it_algo_type_ == 2 && lap_type == 0)
+    if (it_algo_type_ == 2 && lap_type_ == pb::LapType::Mehrstellen1)
     {
         (*MPIdata::sout) << "ERROR: Davidson and Mehrstellen incompatible!"
                          << std::endl;
@@ -2036,22 +2031,22 @@ void Control::printPoissonOptions(std::ostream& os)
     os << " Finite difference scheme for Poisson: ";
     switch (poisson_lap_type_)
     {
-        case PoissonFDtype::h2:
+        case pb::LapType::FD2nd:
             os << "2nd order";
             break;
-        case PoissonFDtype::h4:
+        case pb::LapType::FD4th:
             os << "4th order";
             break;
-        case PoissonFDtype::h6:
+        case pb::LapType::FD6th:
             os << "6th order";
             break;
-        case PoissonFDtype::h8:
+        case pb::LapType::FD8th:
             os << "8th order";
             break;
-        case PoissonFDtype::h4M:
+        case pb::LapType::Mehrstellen1:
             os << "Mehrstellen 4th order";
             break;
-        case PoissonFDtype::h4MP:
+        case pb::LapType::Mehrstellen2:
             os << "MehrstellenP 4th order";
             break;
         default:

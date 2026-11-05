@@ -33,7 +33,7 @@ public:
     Hamiltonian();
     ~Hamiltonian();
 
-    void setup(const pb::Grid& myGrid, const int lap_type);
+    void setup(const pb::Grid& myGrid, const pb::LapType lap_type);
 
     Potentials& potential() { return *pot_; }
     void setHlOutdated() { itindex_ = -1; }

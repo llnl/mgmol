@@ -25,7 +25,7 @@ private:
     // operator to solve for
     OperatorType oper_;
 
-    const short precond_lap_type_;
+    const pb::LapType precond_lap_type_;
 
     // preconditioner operator for each MG level
     std::vector<pb::Lap<PrecondDataType>*> precond_oper_;
@@ -52,8 +52,8 @@ private:
     void clear();
 
 public:
-    PCGSolver(OperatorType& oper, const short precond_lap_type, const short px,
-        const short py, const short pz)
+    PCGSolver(OperatorType& oper, const pb::LapType precond_lap_type,
+        const short px, const short py, const short pz)
         : oper_(oper),
           precond_lap_type_(precond_lap_type),
           maxiters_(10),

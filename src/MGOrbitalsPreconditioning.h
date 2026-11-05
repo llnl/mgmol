@@ -47,7 +47,7 @@ private:
 
     short mg_levels_;
 
-    short lap_type_;
+    pb::LapType lap_type_;
 
     bool is_set_;
 
@@ -60,7 +60,8 @@ private:
     std::shared_ptr<Map2Masks> map2masks_;
 
 public:
-    MGOrbitalsPreconditioning(const short mg_levels, const short lap_type);
+    MGOrbitalsPreconditioning(
+        const short mg_levels, const pb::LapType lap_type);
 
     ~MGOrbitalsPreconditioning();
 

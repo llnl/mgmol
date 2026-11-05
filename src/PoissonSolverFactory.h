@@ -30,7 +30,7 @@
  */
 template <typename ScalarType, typename PDataType>
 Poisson* createHartreeCG(
-    PoissonFDtype lap_type, const pb::Grid& myGrid, const short bc[3])
+    pb::LapType lap_type, const pb::Grid& myGrid, const short bc[3])
 {
     MGmol_MPI& mmpi = *(MGmol_MPI::instance());
     if (mmpi.instancePE0())
@@ -44,32 +44,32 @@ Poisson* createHartreeCG(
 
     switch (lap_type)
     {
-        case PoissonFDtype::h4M:
+        case pb::LapType::Mehrstellen1:
             poisson_solver
                 = new Hartree_CG<pb::Laph4M<ScalarType>, ScalarType, PDataType>(
                     myGrid, bc);
             break;
-        case PoissonFDtype::h2:
+        case pb::LapType::FD2nd:
             poisson_solver
                 = new Hartree_CG<pb::Laph2<ScalarType>, ScalarType, PDataType>(
                     myGrid, bc);
             break;
-        case PoissonFDtype::h4:
+        case pb::LapType::FD4th:
             poisson_solver
                 = new Hartree_CG<pb::Laph4<ScalarType>, ScalarType, PDataType>(
                     myGrid, bc);
             break;
-        case PoissonFDtype::h6:
+        case pb::LapType::FD6th:
             poisson_solver
                 = new Hartree_CG<pb::Laph6<ScalarType>, ScalarType, PDataType>(
                     myGrid, bc);
             break;
-        case PoissonFDtype::h8:
+        case pb::LapType::FD8th:
             poisson_solver
                 = new Hartree_CG<pb::Laph8<ScalarType>, ScalarType, PDataType>(
                     myGrid, bc);
             break;
-        case PoissonFDtype::h4MP:
+        case pb::LapType::Mehrstellen2:
             poisson_solver = new Hartree_CG<pb::Laph4MP<ScalarType>, ScalarType,
                 PDataType>(myGrid, bc);
             break;
@@ -89,7 +89,7 @@ public:
     /*!
      * return specific Poisson solver needed to solve Hartree problem
      */
-    static Poisson* create(const pb::Grid& myGrid, PoissonFDtype lap_type,
+    static Poisson* create(const pb::Grid& myGrid, pb::LapType lap_type,
         const short bc[3], const double screening_const)
     {
         Poisson* poisson_solver = nullptr;
@@ -101,7 +101,7 @@ public:
             {
                 switch (lap_type)
                 {
-                    case PoissonFDtype::h4M:
+                    case pb::LapType::Mehrstellen1:
                         poisson_solver
                             = new ShiftedHartree<pb::ShiftedLaph4M<double>>(
                                 myGrid, bc, screening_const);
@@ -116,27 +116,27 @@ public:
             {
                 switch (lap_type)
                 {
-                    case PoissonFDtype::h4M:
+                    case pb::LapType::Mehrstellen1:
                         poisson_solver
                             = new Hartree<pb::Laph4M<double>>(myGrid, bc);
                         break;
-                    case PoissonFDtype::h2:
+                    case pb::LapType::FD2nd:
                         poisson_solver
                             = new Hartree<pb::Laph2<double>>(myGrid, bc);
                         break;
-                    case PoissonFDtype::h4:
+                    case pb::LapType::FD4th:
                         poisson_solver
                             = new Hartree<pb::Laph4<double>>(myGrid, bc);
                         break;
-                    case PoissonFDtype::h6:
+                    case pb::LapType::FD6th:
                         poisson_solver
                             = new Hartree<pb::Laph6<double>>(myGrid, bc);
                         break;
-                    case PoissonFDtype::h8:
+                    case pb::LapType::FD8th:
                         poisson_solver
                             = new Hartree<pb::Laph8<double>>(myGrid, bc);
                         break;
-                    case PoissonFDtype::h4MP:
+                    case pb::LapType::Mehrstellen2:
                         poisson_solver
                             = new Hartree<pb::Laph4MP<double>>(myGrid, bc);
                         break;
@@ -152,7 +152,7 @@ public:
             {
                 switch (lap_type)
                 {
-                    case PoissonFDtype::h4M:
+                    case pb::LapType::Mehrstellen1:
                         poisson_solver
                             = new ShiftedHartree<pb::ShiftedLaph4M<double>>(
                                 myGrid, bc, screening_const);
@@ -185,7 +185,7 @@ public:
         return poisson_solver;
     }
 
-    static Poisson* createDiel(pb::Grid& pbGrid, PoissonFDtype lap_type,
+    static Poisson* createDiel(pb::Grid& pbGrid, pb::LapType lap_type,
         const short bc[3], const double e0, const double rho0,
         const double drho0)
     {
@@ -196,27 +196,27 @@ public:
         {
             switch (lap_type)
             {
-                case PoissonFDtype::h4M:
+                case pb::LapType::Mehrstellen1:
                     poisson_solver = new PBdiel<pb::PBh4M<double>>(
                         pbGrid, bc, e0, rho0, drho0);
                     break;
-                case PoissonFDtype::h2:
+                case pb::LapType::FD2nd:
                     poisson_solver = new PBdiel<pb::PBh2<double>>(
                         pbGrid, bc, e0, rho0, drho0);
                     break;
-                case PoissonFDtype::h4:
+                case pb::LapType::FD4th:
                     poisson_solver = new PBdiel<pb::PBh4<double>>(
                         pbGrid, bc, e0, rho0, drho0);
                     break;
-                case PoissonFDtype::h6:
+                case pb::LapType::FD6th:
                     poisson_solver = new PBdiel<pb::PBh6<double>>(
                         pbGrid, bc, e0, rho0, drho0);
                     break;
-                case PoissonFDtype::h8:
+                case pb::LapType::FD8th:
                     poisson_solver = new PBdiel<pb::PBh8<double>>(
                         pbGrid, bc, e0, rho0, drho0);
                     break;
-                case PoissonFDtype::h4MP:
+                case pb::LapType::Mehrstellen2:
                     poisson_solver = new PBdiel<pb::PBh4MP<double>>(
                         pbGrid, bc, e0, rho0, drho0);
                     break;
@@ -228,27 +228,27 @@ public:
         {
             switch (lap_type)
             {
-                case PoissonFDtype::h4M:
+                case pb::LapType::Mehrstellen1:
                     poisson_solver = new PBdiel_CG<pb::PBh4M<double>>(
                         pbGrid, bc, e0, rho0, drho0);
                     break;
-                case PoissonFDtype::h2:
+                case pb::LapType::FD2nd:
                     poisson_solver = new PBdiel_CG<pb::PBh2<double>>(
                         pbGrid, bc, e0, rho0, drho0);
                     break;
-                case PoissonFDtype::h4:
+                case pb::LapType::FD4th:
                     poisson_solver = new PBdiel_CG<pb::PBh4<double>>(
                         pbGrid, bc, e0, rho0, drho0);
                     break;
-                case PoissonFDtype::h6:
+                case pb::LapType::FD6th:
                     poisson_solver = new PBdiel_CG<pb::PBh6<double>>(
                         pbGrid, bc, e0, rho0, drho0);
                     break;
-                case PoissonFDtype::h8:
+                case pb::LapType::FD8th:
                     poisson_solver = new PBdiel_CG<pb::PBh8<double>>(
                         pbGrid, bc, e0, rho0, drho0);
                     break;
-                case PoissonFDtype::h4MP:
+                case pb::LapType::Mehrstellen2:
                     poisson_solver = new PBdiel_CG<pb::PBh4MP<double>>(
                         pbGrid, bc, e0, rho0, drho0);
                     break;

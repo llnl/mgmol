@@ -21,7 +21,7 @@
 
 template <class OrbitalsType, typename PDataType>
 MGOrbitalsPreconditioning<OrbitalsType, PDataType>::MGOrbitalsPreconditioning(
-    const short mg_levels, const short lap_type)
+    const short mg_levels, const pb::LapType lap_type)
     : mg_levels_(mg_levels), lap_type_(lap_type), is_set_(false)
 {
     Control& ct(*(Control::instance()));
