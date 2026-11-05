@@ -10,6 +10,16 @@
 #ifndef MGMOL_included_Poisson
 #define MGMOL_included_Poisson
 
+enum struct PoissonFDtype
+{
+    h4M,
+    h2,
+    h4,
+    h6,
+    h8,
+    h4MP
+};
+
 #include "PoissonInterface.h"
 
 #include "GridFunc.h"

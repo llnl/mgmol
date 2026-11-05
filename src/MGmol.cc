@@ -26,8 +26,7 @@
 #include "Electrostatic.h"
 #include "Energy.h"
 #include "EnergySpreadPenalty.h"
-#include "FDkernels.h"
-#include "FDoper.h"
+#include "FDoperInterface.h"
 #include "FIRE.h"
 #include "Forces.h"
 #include "GridFunc.h"
@@ -192,7 +191,7 @@ int MGmol<OrbitalsType>::initial()
 
     const pb::Grid& mygrid = mymesh->grid();
 
-    hamiltonian_->setup(mygrid, ct.lap_type);
+    hamiltonian_->setup(mygrid, ct.lap_type());
 
     pb::Lap<ORBDTYPE>* lapop
         = ct.Mehrstellen() ? hamiltonian_->lapOper() : nullptr;

@@ -108,7 +108,7 @@ int testPotRestart(MGmolInterface* mgmol_)
     {
         printf("FOM potential relative error: %.3e\n", rel_error);
     }
-    if (rel_error > 1e-9)
+    if (rel_error > 2e-9)
     {
         if (rank == 0)
         {

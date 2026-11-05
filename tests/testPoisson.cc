@@ -127,7 +127,7 @@ void run_test()
     // fill ghost values
     gfu.trade_boundaries();
 
-    const short precond_lap_type = 1; // 2nd order
+    const PoissonFDtype precond_lap_type = PoissonFDtype::h2; // 2nd order
     PCGSolver<LapOperator, double, float> pcg(
         lap, precond_lap_type, bc[0], bc[1], bc[2]);
     const double tol    = 1.e-11;

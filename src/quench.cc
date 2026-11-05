@@ -600,13 +600,13 @@ int MGmol<OrbitalsType>::quench(OrbitalsType& orbitals, Ions& ions,
     {
         orbitals_precond_.reset(
             new MGOrbitalsPreconditioning<OrbitalsType, float>(
-                ct.getMGlevels(), ct.lap_type));
+                ct.getMGlevels(), ct.lap_type()));
     }
     else if (precision == 64)
     {
         orbitals_precond_.reset(
             new MGOrbitalsPreconditioning<OrbitalsType, double>(
-                ct.getMGlevels(), ct.lap_type));
+                ct.getMGlevels(), ct.lap_type()));
     }
     else
     {

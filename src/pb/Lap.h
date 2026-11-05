@@ -16,6 +16,17 @@
 
 namespace pb
 {
+enum struct LapType
+{
+    Mehrstellen1,
+    Mehrstellen2,
+    FD2nd,
+    FD4th,
+    FD6th,
+    FD8th,
+    UNDEFINED
+};
+
 template <class T>
 class Lap : public FDoper<T>
 {

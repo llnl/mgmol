@@ -91,7 +91,8 @@ void PCGSolver<OperatorType, ScalarDataType, PrecondDataType>::setupPrecon()
         grid_.push_back(coarse_grid);
 
         pb::Lap<PrecondDataType>* myoper
-            = LapFactory<PrecondDataType>::createLap(*coarse_grid, 1);
+            = LapFactory<PrecondDataType>::createLap(
+                *coarse_grid, PoissonFDtype::h2);
         precond_oper_.push_back(myoper);
 
         gf_work = new pb::GridFunc<PrecondDataType>(

@@ -10,7 +10,7 @@
 #ifndef MGMOL_RHO_H
 #define MGMOL_RHO_H
 
-#include "Control.h"
+#include "Orbitals.h"
 #include "Timer.h"
 #include "global.h"
 

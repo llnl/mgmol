@@ -778,6 +778,7 @@ endif(${MGMOL_WITH_SCALAPACK})
 target_include_directories(testAndersonMix PRIVATE ${Boost_INCLUDE_DIRS})
 target_include_directories(testIons PRIVATE ${Boost_INCLUDE_DIRS} ${HDF5_INCLUDE_DIRS})
 target_include_directories(testRhoVhRestart PRIVATE ${Boost_INCLUDE_DIRS})
+target_include_directories(testPoisson PRIVATE ${HDF5_INCLUDE_DIRS})
 
 target_link_libraries(testMPI PRIVATE MPI::MPI_CXX)
 target_link_libraries(testSuperSampling PRIVATE MPI::MPI_CXX)

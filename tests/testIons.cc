@@ -44,7 +44,7 @@ TEST_CASE("Ions", "[ions]")
     const double ll         = 10.;
     const double lattice[3] = { ll, ll, ll };
     const unsigned ngpts[3] = { 32, 24, 20 };
-    short lap_type          = 0;
+    pb::LapType lap_type    = pb::LapType::FD4th;
 
     Mesh::setup(comm, ngpts, origin, lattice, lap_type);
 

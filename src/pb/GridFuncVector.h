@@ -12,6 +12,7 @@
 
 #include "FDkernels.h"
 #include "GridFunc.h"
+#include "Lap.h"
 #include "Map2Masks.h"
 #include "memory_space.h"
 
@@ -477,10 +478,10 @@ public:
     void getValues(const int k, InputScalarType* vv) const;
 
     void applyLap(
-        const int type, GridFuncVector<ScalarType, MemorySpaceType>& rhs);
+        const LapType type, GridFuncVector<ScalarType, MemorySpaceType>& rhs);
     void applyRHS(
-        const int type, GridFuncVector<ScalarType, MemorySpaceType>& rhs);
-    void jacobi(const int type,
+        const LapType type, GridFuncVector<ScalarType, MemorySpaceType>& rhs);
+    void jacobi(const LapType type,
         const GridFuncVector<ScalarType, MemorySpaceType>& B,
         GridFuncVector<ScalarType, MemorySpaceType>& w, const double scale);
 

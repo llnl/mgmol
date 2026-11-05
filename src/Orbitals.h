@@ -10,8 +10,17 @@
 #ifndef MGMOL_ORBITALS_H
 #define MGMOL_ORBITALS_H
 
-#include "hdf5.h"
 #include "memory_space.h"
+
+#include <hdf5.h>
+
+enum struct OrthoType
+{
+    Eigenfunctions,
+    Nonorthogonal,
+    Orthonormal,
+    UNDEFINED
+};
 
 class Orbitals
 {

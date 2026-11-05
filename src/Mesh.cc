@@ -14,13 +14,13 @@
 MPI_Comm Mesh::comm_   = MPI_COMM_NULL;
 Mesh* Mesh::pinstance_ = nullptr;
 
-unsigned Mesh::ngpts_[3] = { 0, 0, 0 };
-double Mesh::origin_[3]  = { 0., 0., 0. };
-double Mesh::lattice_[3] = { 0., 0., 0. };
-int Mesh::lap_type_      = -1;
-int Mesh::subdivx_       = 1;
-int Mesh::numpt_         = -1;
-int Mesh::loc_numpt_     = -1;
+unsigned Mesh::ngpts_[3]    = { 0, 0, 0 };
+double Mesh::origin_[3]     = { 0., 0., 0. };
+double Mesh::lattice_[3]    = { 0., 0., 0. };
+pb::LapType Mesh::lap_type_ = pb::LapType::UNDEFINED;
+int Mesh::subdivx_          = 1;
+int Mesh::numpt_            = -1;
+int Mesh::loc_numpt_        = -1;
 
 void Mesh::print(std::ostream& os) const
 {

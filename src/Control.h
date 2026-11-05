@@ -10,6 +10,9 @@
 #ifndef CONTROL_H
 #define CONTROL_H
 
+#include "Lap.h"
+#include "Orbitals.h"
+#include "Poisson.h"
 #include "Species.h"
 #include "Timeout.h"
 
@@ -71,24 +74,6 @@ enum class DMEigensolverType
     Chebyshev,
     SP2,
     UNDEFINED
-};
-
-enum class OrthoType
-{
-    Eigenfunctions,
-    Nonorthogonal,
-    Orthonormal,
-    UNDEFINED
-};
-
-enum class PoissonFDtype
-{
-    h4M,
-    h2,
-    h4,
-    h6,
-    h8,
-    h4MP
 };
 
 // Main control structure
@@ -358,7 +343,12 @@ public:
 
     void global_exit();
 
-    bool Mehrstellen() const { return (lap_type == 0 || lap_type == 10); }
+    bool Mehrstellen() const
+    {
+        return (lap_type_ == pb::LapType::Mehrstellen1
+                || lap_type_ == pb::LapType::Mehrstellen2);
+    }
+    pb::LapType lap_type() const { return lap_type_; }
 
     PoissonFDtype getPoissonFDtype() const { return poisson_lap_type_; }
 
@@ -426,7 +416,7 @@ public:
 
     PoissonFDtype poisson_lap_type_;
 
-    short lap_type;
+    pb::LapType lap_type_;
 
     short orthof; // orthogonalization frequency
 

@@ -8,7 +8,6 @@
 // Please also read this link https://github.com/llnl/mgmol/LICENSE
 
 #include "RadialMeshFunction.h"
-#include "../Control.h"
 #include "MPIdata.h"
 
 #include <cmath>
@@ -511,8 +510,7 @@ void RadialMeshFunction::rft(RadialMeshFunction& filt_func, const int lval,
     // Fourier Filter the transform gcof
     const double gcut = 0.75 * M_PI / hmax;
 
-    Control& ct = *(Control::instance());
-    if (printFlag && ct.verbose > 0)
+    if (printFlag)
         (*MPIdata::sout) << "RadialMeshFunction::rft(),"
                          << " Cutoff for pseudopotential: " << gcut * gcut
                          << "[Ry]" << std::endl;
