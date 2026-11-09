@@ -527,6 +527,20 @@ add_test(NAME testContinuumSolvent
          ${CMAKE_CURRENT_SOURCE_DIR}/ContinuumSolvent/coords.in
          ${CMAKE_CURRENT_SOURCE_DIR}/ContinuumSolvent/lrs.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
+add_test(NAME testOrder6
+         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Order6/test.py
+         ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
+         ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
+         ${CMAKE_CURRENT_SOURCE_DIR}/Order6/mgmol.cfg
+         ${CMAKE_CURRENT_SOURCE_DIR}/Order6/si2.xyz
+         ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
+add_test(NAME testOrder8
+         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Order8/test.py
+         ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
+         ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
+         ${CMAKE_CURRENT_SOURCE_DIR}/Order8/mgmol.cfg
+         ${CMAKE_CURRENT_SOURCE_DIR}/Order8/si2.xyz
+         ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testPinnedMolecule
          COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/PinnedMolecule/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}

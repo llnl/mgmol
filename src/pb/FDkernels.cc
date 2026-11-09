@@ -280,6 +280,12 @@ void FDkernelDel2_6th(const Grid& grid, ScalarType* v, ScalarType* u,
     const double c0
         = -2. * (c1x + c2x + c3x + c1y + c2y + c3y + c1z + c2z + c3z);
 
+    const int dim0 = grid.dim(0);
+    const int dim1 = grid.dim(1);
+    const int dim2 = grid.dim(2);
+
+    const size_t ngpts = grid.sizeg();
+
     const int incx = grid.inc(0);
     const int incy = grid.inc(1);
 
@@ -288,66 +294,50 @@ void FDkernelDel2_6th(const Grid& grid, ScalarType* v, ScalarType* u,
     const int incx3 = 3 * grid.inc(0);
     const int incy3 = 3 * grid.inc(1);
 
-    const int dim0     = grid.dim(0);
-    const int dim1     = grid.dim(1);
-    const int dim2     = grid.dim(2);
-    const size_t ngpts = grid.sizeg();
-
-    const int gpt = grid.ghost_pt();
-
-    int iix = gpt * incx;
+    const int ng = grid.ghost_pt();
 
     for (size_t ifunc = 0; ifunc < nfunc; ifunc++)
     {
         for (int ix = 0; ix < dim0; ix++)
         {
-            int iiy = iix + gpt * incy + ifunc * ngpts;
-
             for (int iy = 0; iy < dim1; iy++)
             {
-                int iiz = iiy + gpt;
-
                 for (int iz = 0; iz < dim2; iz++)
                 {
-                    u[iiz] = (ScalarType)(c0 * (double)v[iiz]
+                    int i = ifunc * ngpts
+                            + ((ix + ng) * incx + (iy + ng) * incy) + iz + ng;
 
-                                          + c1x
-                                                * ((double)v[iiz - incx]
-                                                    + (double)v[iiz + incx])
-                                          + c1y
-                                                * ((double)v[iiz - incy]
-                                                    + (double)v[iiz + incy])
-                                          + c1z
-                                                * ((double)v[iiz - 1]
-                                                    + (double)v[iiz + 1])
+                    u[i] = (ScalarType)(c0 * (double)v[i]
+                                        + c1x
+                                              * ((double)v[i - incx]
+                                                  + (double)v[i + incx])
+                                        + c1y
+                                              * ((double)v[i - incy]
+                                                  + (double)v[i + incy])
+                                        + c1z
+                                              * ((double)v[i - 1]
+                                                  + (double)v[i + 1])
+                                        + c2x
+                                              * ((double)v[i - incx2]
+                                                  + (double)v[i + incx2])
+                                        + c2y
+                                              * ((double)v[i - incy2]
+                                                  + (double)v[i + incy2])
+                                        + c2z
+                                              * ((double)v[i - 2]
+                                                  + (double)v[i + 2])
 
-                                          + c2x
-                                                * ((double)v[iiz - incx2]
-                                                    + (double)v[iiz + incx2])
-                                          + c2y
-                                                * ((double)v[iiz - incy2]
-                                                    + (double)v[iiz + incy2])
-                                          + c2z
-                                                * ((double)v[iiz - 2]
-                                                    + (double)v[iiz + 2])
-
-                                          + c3x
-                                                * ((double)v[iiz - incx3]
-                                                    + (double)v[iiz + incx3])
-                                          + c3y
-                                                * ((double)v[iiz - incy3]
-                                                    + (double)v[iiz + incy3])
-                                          + c3z
-                                                * ((double)v[iiz - 3]
-                                                    + (double)v[iiz + 3]));
-
-                    iiz++;
+                                        + c3x
+                                              * ((double)v[i - incx3]
+                                                  + (double)v[i + incx3])
+                                        + c3y
+                                              * ((double)v[i - incy3]
+                                                  + (double)v[i + incy3])
+                                        + c3z
+                                              * ((double)v[i - 3]
+                                                  + (double)v[i + 3]));
                 }
-
-                iiy += incy;
             }
-
-            iix += incx;
         }
     }
 }
@@ -382,84 +372,78 @@ void FDkernelDel2_8th(const Grid& grid, ScalarType* v, ScalarType* u,
                       * (c1x + c2x + c3x + c4x + c1y + c2y + c3y + c4y + c1z
                           + c2z + c3z + c4z);
 
-    const int incx  = grid.inc(0);
-    const int incy  = grid.inc(1);
-    const int incx2 = 2 * grid.inc(0);
-    const int incy2 = 2 * grid.inc(1);
-    const int incx3 = 3 * grid.inc(0);
-    const int incy3 = 3 * grid.inc(1);
-    const int incx4 = 4 * grid.inc(0);
-    const int incy4 = 4 * grid.inc(1);
+    const int dim0 = grid.dim(0);
+    const int dim1 = grid.dim(1);
+    const int dim2 = grid.dim(2);
 
-    const int dim0     = grid.dim(0);
-    const int dim1     = grid.dim(1);
-    const int dim2     = grid.dim(2);
     const size_t ngpts = grid.sizeg();
 
-    const int gpt = grid.ghost_pt();
-    int iix       = gpt * incx;
+    const int incx  = grid.inc(0);
+    const int incy  = grid.inc(1);
+    const int incx2 = 2 * incx;
+    const int incy2 = 2 * incy;
+    const int incx3 = 3 * incx;
+    const int incy3 = 3 * incy;
+    const int incx4 = 4 * incx;
+    const int incy4 = 4 * incy;
+
+    const int ng = grid.ghost_pt();
 
     for (size_t ifunc = 0; ifunc < nfunc; ifunc++)
     {
         for (int ix = 0; ix < dim0; ix++)
         {
-            int iiy = iix + gpt * incy + ifunc * ngpts;
-
             for (int iy = 0; iy < dim1; iy++)
             {
-                int iiz = iiy + gpt;
-
                 for (int iz = 0; iz < dim2; iz++)
                 {
-                    u[iiz] = (ScalarType)(c0 * (double)v[iiz]
+                    const int i = ifunc * ngpts
+                                  + ((ix + ng) * incx + (iy + ng) * incy) + iz
+                                  + ng;
 
-                                          + c1x
-                                                * ((double)v[iiz - incx]
-                                                    + (double)v[iiz + incx])
-                                          + c1y
-                                                * ((double)v[iiz - incy]
-                                                    + (double)v[iiz + incy])
-                                          + c1z
-                                                * ((double)v[iiz - 1]
-                                                    + (double)v[iiz + 1])
+                    u[i] = (ScalarType)(c0 * (double)v[i]
 
-                                          + c2x
-                                                * ((double)v[iiz - incx2]
-                                                    + (double)v[iiz + incx2])
-                                          + c2y
-                                                * ((double)v[iiz - incy2]
-                                                    + (double)v[iiz + incy2])
-                                          + c2z
-                                                * ((double)v[iiz - 2]
-                                                    + (double)v[iiz + 2])
+                                        + c1x
+                                              * ((double)v[i - incx]
+                                                  + (double)v[i + incx])
+                                        + c1y
+                                              * ((double)v[i - incy]
+                                                  + (double)v[i + incy])
+                                        + c1z
+                                              * ((double)v[i - 1]
+                                                  + (double)v[i + 1])
 
-                                          + c3x
-                                                * ((double)v[iiz - incx3]
-                                                    + (double)v[iiz + incx3])
-                                          + c3y
-                                                * ((double)v[iiz - incy3]
-                                                    + (double)v[iiz + incy3])
-                                          + c3z
-                                                * ((double)v[iiz - 3]
-                                                    + (double)v[iiz + 3])
+                                        + c2x
+                                              * ((double)v[i - incx2]
+                                                  + (double)v[i + incx2])
+                                        + c2y
+                                              * ((double)v[i - incy2]
+                                                  + (double)v[i + incy2])
+                                        + c2z
+                                              * ((double)v[i - 2]
+                                                  + (double)v[i + 2])
 
-                                          + c4x
-                                                * ((double)v[iiz - incx4]
-                                                    + (double)v[iiz + incx4])
-                                          + c4y
-                                                * ((double)v[iiz - incy4]
-                                                    + (double)v[iiz + incy4])
-                                          + c4z
-                                                * ((double)v[iiz - 4]
-                                                    + (double)v[iiz + 4]));
+                                        + c3x
+                                              * ((double)v[i - incx3]
+                                                  + (double)v[i + incx3])
+                                        + c3y
+                                              * ((double)v[i - incy3]
+                                                  + (double)v[i + incy3])
+                                        + c3z
+                                              * ((double)v[i - 3]
+                                                  + (double)v[i + 3])
 
-                    iiz++;
+                                        + c4x
+                                              * ((double)v[i - incx4]
+                                                  + (double)v[i + incx4])
+                                        + c4y
+                                              * ((double)v[i - incy4]
+                                                  + (double)v[i + incy4])
+                                        + c4z
+                                              * ((double)v[i - 4]
+                                                  + (double)v[i + 4]));
                 }
-
-                iiy += incy;
             }
-
-            iix += incx;
         }
     }
 }
