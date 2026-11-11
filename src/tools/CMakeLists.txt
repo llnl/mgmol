@@ -8,6 +8,7 @@ set(SOURCES mgmol_mpi_tools.cc
        random.cc 
        coloring.cc 
        SymmetricMatrix.cc
+       PinnedH2O.cc
 )
 
 add_library(mgmol_tools ${SOURCES})

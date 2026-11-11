@@ -1,0 +1,66 @@
+#!/bin/tcsh
+#SBATCH -N 8
+#SBATCH -t 1:00:00
+#SBATCH -p pbatch
+#SBATCH -A romdft
+
+date
+
+setenv OMP_NUM_THREADS 1
+#setenv KMP_DETERMINISTIC_REDUCTION 1
+
+set ncpus = 8
+
+set maindir = /p/lustre2/cheung26/mgmol
+
+setenv LD_LIBRARY_PATH ${maindir}/build_quartz/libROM/build/lib:$LD_LIBRARY_PATH
+
+set exe     = mgmol-opt
+
+cp $maindir/install_quartz/bin/$exe .
+
+ln -s -f $maindir/potentials/pseudo.O_ONCV_PBE_SG15 .
+ln -s -f $maindir/potentials/pseudo.H_ONCV_PBE_SG15 .
+
+source $maindir/scripts/modules.quartz
+
+set outdir = data_${ncpus}
+
+set efield_min = 0.00000
+set efield_max = 0.00010
+set efield_num_increments = 2
+
+set occ = 222011
+set cfg_offline = efield_${occ}_offline.cfg
+
+mkdir ${outdir}
+
+foreach i (`seq 0 $efield_num_increments`)
+  set ex = `echo "scale=5; $efield_min + $i * ($efield_max - $efield_min) / ($efield_num_increments)" | bc`
+  set ex = `printf "%.5f" $ex` 
+  foreach j (`seq 0 $efield_num_increments`)
+    set ey = `echo "scale=5; $efield_min + $j * ($efield_max - $efield_min) / ($efield_num_increments)" | bc`
+    set ey = `printf "%.5f" $ey`
+    foreach k (`seq 0 $efield_num_increments`)
+      set ez = `echo "scale=5; $efield_min + $k * ($efield_max - $efield_min) / ($efield_num_increments)" | bc`
+      set ez = `printf "%.5f" $ez`
+      echo "efield: ($ex, $ey, $ez), occ: $occ"
+      set tag = ${ex}_${ey}_${ez}_${occ}
+      if (-e ${outdir}/${tag}) then
+        continue
+      else
+        mkdir ${outdir}/${tag}
+      endif
+      cp $cfg_offline ${outdir}/${tag}/${cfg_offline}
+      cp h2o.in ${outdir}/${tag}
+      sed -i "s/NCPUS/${ncpus}/g" ${outdir}/${tag}/${cfg_offline}
+      sed -i "s/EX_VAL/${ex}/g" ${outdir}/${tag}/${cfg_offline}
+      sed -i "s/EY_VAL/${ey}/g" ${outdir}/${tag}/${cfg_offline}
+      sed -i "s/EZ_VAL/${ez}/g" ${outdir}/${tag}/${cfg_offline}
+      sed -i "s/CUSTOM_TAG/${tag}/g" ${outdir}/${tag}/${cfg_offline}
+      srun -p pdebug -n $ncpus $exe -c ${outdir}/${tag}/${cfg_offline} -i ${outdir}/${tag}/h2o.in > ${outdir}/${tag}/offline_efield.out
+    end
+  end
+end
+
+date
