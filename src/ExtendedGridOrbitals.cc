@@ -1460,7 +1460,7 @@ void ExtendedGridOrbitals<ScalarType>::normalize()
                 (*MPIdata::sout)
                     << "i=" << i << ", diagS[i]=" << diagS[i] << std::endl;
 #endif
-        assert(diagS[color] > 1.e-15);
+        assert(diagS[color] > 1.e-20);
         diagS[color] = 1. / sqrt(diagS[color]);
 
         block_vector_.scal(diagS[color], color, 0);

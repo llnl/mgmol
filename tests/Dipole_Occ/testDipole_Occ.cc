@@ -144,7 +144,7 @@ int main(int argc, char** argv)
         // frozen to solution of previous problem
 
         // reset initial DM to test iterative solve for it
-        projmatrices->setDMuniform(ct.getNelSpin());
+        projmatrices->setDMaufbau(ct.getNelSpin());
         std::vector<double> forces;
 
         double eks = mgmol->evaluateDMandEnergyAndForces(
