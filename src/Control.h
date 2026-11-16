@@ -76,6 +76,13 @@ enum class DMEigensolverType
     UNDEFINED
 };
 
+enum struct PrecondType
+{
+    Original,
+    Simple,
+    UNDEFINED
+};
+
 // Main control structure
 class Control
 {
@@ -159,10 +166,6 @@ private:
     // 10=local RLF
     // 11=local greedy
     short coloring_algo_;
-
-    // preconditioning type
-    // 10 = MG, block implementation
-    short precond_type_;
 
     short it_algo_type_;
 
@@ -286,8 +289,6 @@ public:
     void printThermostatInfo(std::ostream& os) const;
     void setNumst(const short myspin, const int nval);
     void setNumIons(const int num_ions);
-    int setPreconditionerParameters(const short type, const float factor,
-        const bool project_out, const short nlevels, const float);
     int setShortSightedSolverParameters(const float fact, const float stol,
         const float dtol, const short kim, const short itmax, const short lfil,
         const short maxfill, const short ilutype);
@@ -397,7 +398,8 @@ public:
 
     float betaAnderson;
 
-    // Number of MG levels for preconditioning
+    // Preconditioning parameters
+    PrecondType precond_type_;
     short mg_levels_;
     short mg_npresmoothing_;
     short mg_npostsmoothing_;

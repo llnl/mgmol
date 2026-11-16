@@ -145,7 +145,7 @@ void MasksSet::setup(const std::shared_ptr<LocalizationRegions> lrs,
     const vector<int>& gids(lrs->getOverlapGids());
     allocate(gids);
 
-    for (unsigned short ln = 0; ln < mg_levels_ + 1; ln++)
+    for (unsigned short ln = 0; ln < mg_levels_; ln++)
     {
         initialize(lrs, ln, override_radius);
     }

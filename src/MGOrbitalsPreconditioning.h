@@ -68,8 +68,11 @@ public:
     void setup(OrbitalsType& orbitals, MasksSet*,
         const std::shared_ptr<LocalizationRegions>&) override;
     void precond(OrbitalsType& orbitals) override;
+
     void setGamma(const pb::Lap<ORBDTYPE>& lapOper, const Potentials& pot,
         const short mg_levels, ProjectedMatricesInterface* proj_matrices);
+    void setGamma(const pb::Lap<ORBDTYPE>& lapOper);
+
     static void printTimers(std::ostream& os);
 };
 
