@@ -12,9 +12,9 @@
 
 template <typename T>
 Preconditioning<T>::Preconditioning(const pb::LapType lap_type,
-    const short maxlevels, const short npresmooth, const short npostsmooth,
+    const short maxlevel, const short npresmooth, const short npostsmooth,
     const pb::Grid& grid, const short bcWF[3])
-    : max_levels_(maxlevels), npresmooth_(npresmooth), npostsmooth_(npostsmooth)
+    : max_level_(maxlevel), npresmooth_(npresmooth), npostsmooth_(npostsmooth)
 {
     assert(npresmooth_ >= 0);
     assert(npostsmooth_ >= 0);
@@ -107,7 +107,7 @@ void Preconditioning<T>::setup(
 
     // coarse levels
     pb::Grid* mygrid = grid_[0];
-    for (short ln = 1; ln <= max_levels_; ln++)
+    for (short ln = 1; ln <= max_level_; ln++)
     {
         pb::Grid* coarse_grid = new pb::Grid(mygrid->coarse_grid());
         grid_.push_back(coarse_grid);
@@ -159,7 +159,7 @@ void Preconditioning<T>::mg(pb::GridFuncVector<T, memory_space_type>& gfv_v,
     assert(gfv_work_[level] != nullptr);
 
     short ncycl = npresmooth_;
-    if (level == max_levels_) ncycl = npresmooth_ + npostsmooth_;
+    if (level == max_level_) ncycl = npresmooth_ + npostsmooth_;
 
     const double jacobi_factor = jacobi_factor_[level];
 
@@ -170,7 +170,7 @@ void Preconditioning<T>::mg(pb::GridFuncVector<T, memory_space_type>& gfv_v,
         gfv_v.app_mask(level);
     }
 
-    if (level == max_levels_) return;
+    if (level == max_level_) return;
 
     // COARSE GRID CORRECTION
 

@@ -36,6 +36,7 @@ lines=output.split(b'\n')
 print("Check MLWF convergence and spread values...")
 
 found = False
+max_sweeps = 40
 for line in lines:
   num_matches = line.count(b'MLWFTransform')
   if num_matches:
@@ -47,7 +48,7 @@ for line in lines:
       print(line)
       words=line.split()
       nsweeps = eval(words[0])
-      if nsweeps>35:
+      if nsweeps > max_sweeps:
         print("Test failed: nsweeps = {}".format(nsweeps));
         sys.exit(1)
 

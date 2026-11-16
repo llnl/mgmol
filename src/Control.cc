@@ -118,7 +118,7 @@ Control::Control()
     betaAnderson                     = 0.;
     diel                             = -1;
     lap_type_                        = pb::LapType::UNDEFINED;
-    precond_type_                    = -1;
+    precond_type_                    = PrecondType::UNDEFINED;
     orthof                           = -1;
     init_loc                         = -1;
     init_type                        = -1;
@@ -306,18 +306,16 @@ void Control::print(std::ostream& os)
 
     os << " preconditioner factor: " << precond_factor << std::endl;
     os << " preconditioner precision: " << precond_precision_ << std::endl;
-    if (precond_type_ == 10)
-    {
-        os << " Multigrid preconditioning for wave functions:" << std::endl;
-        os << " # of Multigrid levels     : " << mg_levels_ << std::endl;
-        os << " # of pre-smoothing steps  : " << mg_npresmoothing_ << std::endl;
-        os << " # of post-smoothing steps : " << mg_npostsmoothing_
-           << std::endl;
-    }
+    os << " Multigrid preconditioning for wave functions:" << std::endl;
+    os << " # of Multigrid levels     : " << mg_levels_ << std::endl;
+    os << " # of pre-smoothing steps  : " << mg_npresmoothing_ << std::endl;
+    os << " # of post-smoothing steps : " << mg_npostsmoothing_ << std::endl;
+    os << " Preconditioner type       : ";
+    if (precond_type_ == PrecondType::Simple)
+        os << "simple";
     else
-    {
-        os << " Undefined preconditioning" << std::endl;
-    }
+        os << "original";
+
     os << " Richardson time-step    :" << precond_factor << std::endl;
     if (wf_dyn == 1)
         os << " Anderson extrapolation scheme for wave functions with beta="
@@ -387,7 +385,7 @@ void Control::sync(void)
         short_buffer[3]  = wf_extrapolation_;
         short_buffer[4]  = diel;
         short_buffer[5]  = (short)static_cast<int>(lap_type_);
-        short_buffer[6]  = precond_type_;
+        short_buffer[6]  = (short)static_cast<int>(precond_type_);
         short_buffer[7]  = orthof;
         short_buffer[8]  = it_algo_type_;
         short_buffer[9]  = num_species;
@@ -610,7 +608,7 @@ void Control::sync(void)
     wf_extrapolation_       = short_buffer[3];
     diel                    = short_buffer[4];
     lap_type_               = static_cast<pb::LapType>(short_buffer[5]);
-    precond_type_           = short_buffer[6];
+    precond_type_           = static_cast<PrecondType>(short_buffer[6]);
     orthof                  = short_buffer[7];
     it_algo_type_           = short_buffer[8];
     num_species             = short_buffer[9];
@@ -898,7 +896,6 @@ int Control::checkState()
     }
     assert(xctype == 0 || xctype == 2);
     assert(mix_pot < 2. && mix_pot > 0.);
-    assert(precond_type_ == 10);
     assert(project_out_psd == 0 || project_out_psd == 1);
     assert(wannier_transform_type == 0 || wannier_transform_type == 1
            || wannier_transform_type == 2);
@@ -1050,48 +1047,6 @@ void Control::readRestartInfo(std::ifstream* tfile)
             << "Control::readRestartInfo(): MPI Bcast of restart_file failed!!!"
             << std::endl;
     }
-}
-
-int Control::setPreconditionerParameters(const short type, const float factor,
-    const bool project_out, const short nlevels, const float fgrid_hmax)
-{
-    if (type != 10)
-    {
-        (*MPIdata::sout) << type << ": Invalid preconditioner type"
-                         << std::endl;
-        return -1;
-    }
-
-    precond_type_ = type;
-    if (precond_type_ == 10)
-        (*MPIdata::sout) << "MG preconditioner" << std::endl;
-    (*MPIdata::sout) << "Preconditioner: block implementation" << std::endl;
-
-    precond_factor = factor;
-    if (factor < 0.)
-        precond_factor_computed = true;
-    else
-        precond_factor_computed = false;
-    project_out_psd = (short)project_out;
-    mg_levels_      = nlevels;
-
-    // Define number of coarse levels for orbitals preconditioning
-    short maxlevels = -1;
-    for (short level = 0; level < 3; level++)
-    {
-        float hmaxgrid = fgrid_hmax * (1 << level);
-        assert(hmaxgrid > 0);
-        if (hmaxgrid < 1.4) maxlevels += 1;
-    }
-    if (mg_levels_ > maxlevels)
-    {
-        (*MPIdata::sout) << "Set MG levels number to maxlevels=" << maxlevels
-                         << std::endl;
-        mg_levels_ = maxlevels;
-    }
-    (*MPIdata::sout) << "MG preconditioner: number of levels =" << mg_levels_
-                     << std::endl;
-    return 0;
 }
 
 int Control::setShortSightedSolverParameters(const float fact, const float stol,
@@ -1557,7 +1512,17 @@ void Control::setOptions(const boost::program_options::variables_map& vm)
         assert(it_algo_type_ >= 0);
 
         // Preconditioner parameters
-        mg_levels_         = vm["Preconditioner.num_levels"].as<short>() - 1;
+        str           = vm["Preconditioner.type"].as<std::string>();
+        precond_type_ = PrecondType::UNDEFINED;
+        if (str.compare("original") == 0)
+        {
+            precond_type_ = PrecondType::Original;
+        }
+        else if (str.compare("simple") == 0)
+        {
+            precond_type_ = PrecondType::Simple;
+        }
+        mg_levels_         = vm["Preconditioner.num_levels"].as<short>();
         mg_npresmoothing_  = vm["Preconditioner.npresmoothing"].as<short>();
         mg_npostsmoothing_ = vm["Preconditioner.npostsmoothing"].as<short>();
         precond_precision_ = vm["Preconditioner.precision"].as<short>();
@@ -1853,8 +1818,6 @@ void Control::setOptions(const boost::program_options::variables_map& vm)
         // derived flags
         loc_mode_ = cut_radius < 100. ? true : false;
         if (lrs_compute > 0 || !loc_mode_) lrs_extrapolation = 0;
-
-        precond_type_ = 10;
 
         if (vm.count("Quench.MLWC"))
         {

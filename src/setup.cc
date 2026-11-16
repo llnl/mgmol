@@ -49,7 +49,7 @@ int MGmol<OrbitalsType>::setupFromInput(const std::string filename)
     ct.adjust();
 
     Mesh* mymesh = Mesh::instance();
-    if (ct.isLocMode()) mymesh->subdivGridx(ct.getMGlevels());
+    if (ct.isLocMode()) mymesh->subdivGridx(ct.getMGlevels() + 1);
 
     const pb::PEenv& myPEenv = mymesh->peenv();
 

@@ -130,28 +130,28 @@ int mgmol_check()
     {
         const pb::Grid& mygrid = mymesh->grid();
 
-        if ((mygrid.dim(0) % (1 << ct.getMGlevels())) != 0)
+        if ((mygrid.dim(0) % (1 << (ct.getMGlevels() - 1))) != 0)
         {
             std::cerr << "main: mygrid.dim(0)=" << mygrid.dim(0)
                       << " not evenly divisible by "
-                      << "2^(ct.getMGlevels())=" << (1 << ct.getMGlevels())
-                      << std::endl;
+                      << "2^(ct.getMGlevels()-1)="
+                      << (1 << (ct.getMGlevels() - 1)) << std::endl;
             return -1;
         }
-        if ((mygrid.dim(1) % (1 << ct.getMGlevels())) != 0)
+        if ((mygrid.dim(1) % (1 << (ct.getMGlevels() - 1))) != 0)
         {
             std::cerr << "main: mygrid.dim(1)=" << mygrid.dim(1)
                       << " not evenly divisible by "
-                      << "2^(ct.getMGlevels())=" << (1 << ct.getMGlevels())
-                      << std::endl;
+                      << "2^(ct.getMGlevels()-1)="
+                      << (1 << (ct.getMGlevels() - 1)) << std::endl;
             return -1;
         }
-        if ((mygrid.dim(2) % (1 << ct.getMGlevels())) != 0)
+        if ((mygrid.dim(2) % (1 << (ct.getMGlevels() - 1))) != 0)
         {
             std::cerr << "main: mygrid.dim(2)=" << mygrid.dim(2)
                       << " not evenly divisible by "
-                      << "2^(ct.getMGlevels())=" << (1 << ct.getMGlevels())
-                      << std::endl;
+                      << "2^(ct.getMGlevels()-1)="
+                      << (1 << (ct.getMGlevels() - 1)) << std::endl;
             return -1;
         }
     }

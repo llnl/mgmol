@@ -123,7 +123,10 @@ int read_config(int argc, char** argv, po::variables_map& vm,
             po::value<bool>()->default_value(false), "Compute dipole moment")(
             "Quench.num_lin_iterations", po::value<short>()->default_value(0),
             "Number of iterations without potential update in quench")(
-            "Preconditioner.num_levels", po::value<short>()->default_value(2),
+            "Preconditioner.type",
+            po::value<std::string>()->default_value("original"),
+            "Preconditioner type")("Preconditioner.num_levels",
+            po::value<short>()->default_value(1),
             "Number of levels for MG preconditioner")(
             "Preconditioner.npresmoothing",
             po::value<short>()->default_value(2),

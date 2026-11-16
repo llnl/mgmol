@@ -164,6 +164,23 @@ void MGOrbitalsPreconditioning<OrbitalsType, PDataType>::setGamma(
         gamma_ *= 4.;
     }
     gamma_ = 1.0 / (2.0 / gamma_ + fabs(vmax - small_eig));
+
+#ifdef DEBUG
+    Control& ct(*(Control::instance()));
+    if (onpe0 && ct.verbose > 2)
+        (*MPIdata::sout) << " time step for low frequencies corrections = "
+                         << gamma_ << endl;
+#endif
+}
+
+template <class OrbitalsType, typename PDataType>
+void MGOrbitalsPreconditioning<OrbitalsType, PDataType>::setGamma(
+    const pb::Lap<ORBDTYPE>& lapOper)
+{
+    assert(precond_);
+    assert(is_set_);
+
+    gamma_ = lapOper.invDiagEl() / 2.;
 #ifdef DEBUG
     Control& ct(*(Control::instance()));
     if (onpe0 && ct.verbose > 2)

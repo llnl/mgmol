@@ -43,16 +43,6 @@ output = subprocess.check_output(command,stderr=subprocess.STDOUT,shell=True)
 #make sure force is below tolerance
 lines=output.split(b'\n')
 
-convergence=0
-for line in lines:
-  if line.count(b'DFTsolver:') and line.count(b'convergence'):
-    convergence=1
-    break
-
-if convergence==0:
-  print("MVP Solver did not converge")
-  sys.exit(1)
-
 flag = 0
 eigenvalues=[]
 energies=[]
@@ -74,6 +64,16 @@ for line in lines:
     ecount=ecount+1
     energies.append(eval(e))
 print(energies)
+
+convergence=0
+for line in lines:
+  if line.count(b'DFTsolver:') and line.count(b'convergence'):
+    convergence=1
+    break
+
+if convergence==0:
+  print("MVP Solver did not converge")
+  sys.exit(1)
 
 print(eigenvalues)
 tol = 1.e-4

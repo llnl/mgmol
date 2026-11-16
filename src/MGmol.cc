@@ -1221,41 +1221,57 @@ void MGmol<OrbitalsType>::projectOutKernel(OrbitalsType& phi)
 }
 
 template <class OrbitalsType>
+template <typename DataType>
+void MGmol<OrbitalsType>::setGammaPrecond()
+{
+    Control& ct = *(Control::instance());
+
+    pb::Lap<ORBDTYPE>* lapOper = hamiltonian_->lapOper();
+
+    using OrbitalsPrecond = MGOrbitalsPreconditioning<OrbitalsType, DataType>;
+    std::shared_ptr<OrbitalsPrecond> orbitals_precond
+        = std::dynamic_pointer_cast<OrbitalsPrecond>(orbitals_precond_);
+
+    if (ct.precond_type_ == PrecondType::Original)
+    {
+        orbitals_precond->setGamma(*lapOper, hamiltonian_->potential(),
+            ct.getMGlevels(), proj_matrices_.get());
+    }
+    else if (ct.precond_type_ == PrecondType::Simple)
+    {
+        orbitals_precond->setGamma(*lapOper);
+    }
+    else
+    {
+        std::cerr << "Unknown preconditioner type!!!" << std::endl;
+        MGmol_MPI& mmpi = *(MGmol_MPI::instance());
+        mmpi.abort();
+    }
+}
+
+template <class OrbitalsType>
 void MGmol<OrbitalsType>::precond_mg(OrbitalsType& phi)
 {
     assert(orbitals_precond_);
 
     Control& ct = *(Control::instance());
 
-    Potentials& pot            = hamiltonian_->potential();
-    pb::Lap<ORBDTYPE>* lapOper = hamiltonian_->lapOper();
-
     const short precision = ct.precond_precision_;
     if (precision == 32)
     {
-        using OrbitalsPrecond = MGOrbitalsPreconditioning<OrbitalsType, float>;
-
-        std::shared_ptr<OrbitalsPrecond> orbitals_precond
-            = std::dynamic_pointer_cast<OrbitalsPrecond>(orbitals_precond_);
-
-        orbitals_precond->setGamma(
-            *lapOper, pot, ct.getMGlevels(), proj_matrices_.get());
+        setGammaPrecond<float>();
     }
     else if (precision == 64)
     {
-        using OrbitalsPrecond = MGOrbitalsPreconditioning<OrbitalsType, double>;
-
-        std::shared_ptr<OrbitalsPrecond> orbitals_precond
-            = std::dynamic_pointer_cast<OrbitalsPrecond>(orbitals_precond_);
-
-        orbitals_precond->setGamma(
-            *lapOper, pot, ct.getMGlevels(), proj_matrices_.get());
+        setGammaPrecond<double>();
     }
     else
     {
         std::cerr << "Precision " << precision
                   << " not supported for orbitals preconditioner!!!"
                   << std::endl;
+        MGmol_MPI& mmpi = *(MGmol_MPI::instance());
+        mmpi.abort();
     }
 
     orbitals_precond_->precond(phi);

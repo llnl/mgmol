@@ -31,7 +31,7 @@ public:
 
 private:
     // V-cycle parameters
-    const short max_levels_;
+    const short max_level_;
     const short npresmooth_;
     const short npostsmooth_;
 
@@ -64,6 +64,6 @@ public:
     void mg(pb::GridFuncVector<T, memory_space_type>& gf_v,
         const pb::GridFuncVector<T, memory_space_type>& gf_f,
         const pb::LapType lap_type, const short level);
-    short max_levels() const { return max_levels_; }
+    short max_level() const { return max_level_; }
 };
 #endif

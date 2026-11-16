@@ -318,6 +318,8 @@ public:
 
     void projectOutKernel(OrbitalsType& phi);
 
+    template <typename DataType>
+    void setGammaPrecond();
     void precond_mg(OrbitalsType& orbitals);
     double computeResidual(OrbitalsType& orbitals, OrbitalsType& work_orbitals,
         Ions& ions, OrbitalsType& res, const KBPsiMatrixSparse* const kbpsi,
