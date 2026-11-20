@@ -103,7 +103,7 @@ void GlobalLBFGS::init(HDFrestart* h5f_file)
     if (ct.restart_info > 0)
     {
         int status = stepper_->init(*h5f_file);
-        if (status < 0) ct.global_exit(2);
+        if (status < 0) mgmol_abort();
 
         // if restart data for lbfgs found
         if (status == 0)

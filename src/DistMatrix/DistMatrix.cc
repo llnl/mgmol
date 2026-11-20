@@ -27,6 +27,8 @@
 #include "blacs.h"
 #endif
 
+#include "MGmol_abort.h"
+
 namespace dist_matrix
 {
 
@@ -365,11 +367,7 @@ DistMatrix<double>& DistMatrix<double>::operator=(const DistMatrix<double>& src)
     // cout << " DistMatrix<double>::operator= for "<<object_name_<<" and
     // "<<a.object_name_ << std::endl;
     if (src.m() != m_ || src.n() != n_)
-    {
-        std::cerr << " DistMatrix<double>::operator=: size inconsistency"
-                  << std::endl;
-        exit(1);
-    }
+        mgmol_abort(" DistMatrix<double>::operator=: size inconsistency");
 
 #ifdef MGMOL_USE_SCALAPACK
     if (src.mb_ == mb_ && src.nb_ == nb_ && src.bc_ == bc_)
@@ -417,11 +415,7 @@ DistMatrix<float>& DistMatrix<float>::operator=(const DistMatrix<float>& src)
     // cout << " DistMatrix<float>::operator= for "<<object_name_<<" and
     // "<<a.object_name_ << std::endl;
     if (src.m() != m_ || src.n() != n_)
-    {
-        std::cerr << " DistMatrix<float>::operator=: size inconsistency"
-                  << std::endl;
-        exit(1);
-    }
+        mgmol_abort(" DistMatrix<float>::operator=: size inconsistency");
 
 #ifdef MGMOL_USE_SCALAPACK
     if (src.mb_ == mb_ && src.nb_ == nb_ && src.bc_ == bc_)
@@ -472,11 +466,7 @@ DistMatrix<double>& DistMatrix<double>::assign(
     int n = src.n();
 
     if (ib + m > m_ || jb + n > n_)
-    {
-        std::cerr << " DistMatrix<double>::assign: size inconsistency"
-                  << std::endl;
-        exit(1);
-    }
+        mgmol_abort(" DistMatrix<double>::assign: size inconsistency");
 
 #ifdef MGMOL_USE_SCALAPACK
     if (src.bc_ == bc_ && src.m_ == m_ && src.n_ == n_ && src.mb_ == mb_
@@ -522,11 +512,7 @@ DistMatrix<float>& DistMatrix<float>::assign(
     int n = src.n();
 
     if (ib + m > m_ || jb + n > n_)
-    {
-        std::cerr << " DistMatrix<float>::assign: size inconsistency"
-                  << std::endl;
-        exit(1);
-    }
+        mgmol_abort(" DistMatrix<float>::assign: size inconsistency");
 
 #ifdef MGMOL_USE_SCALAPACK
     if (src.bc_ == bc_ && src.m_ == m_ && src.n_ == n_ && src.mb_ == mb_

@@ -17,6 +17,8 @@
 #include "blacs.h"
 #endif
 
+#include "MGmol_abort.h"
+
 #ifndef MGMOL_USE_SCALAPACK
 
 void Cblacs_pinfo(int* mypnum, int* nprocs)
@@ -114,15 +116,13 @@ void BlacsContext::buildCommunicator()
             << std::endl;
         std::cerr << "size_=" << size_ << std::endl;
         std::cerr << "comm_global_=" << comm_global_ << std::endl;
-        exit(0);
+        mgmol_abort("BlacsContext::buildCommunicator");
     }
     status = MPI_Group_incl(group_world, size_, ranks, &subgroup);
     if (status != MPI_SUCCESS)
     {
-        std::cerr
-            << "BlacsContext::buildCommunicator() --- Error in MPI_Group_incl"
-            << std::endl;
-        exit(0);
+        mgmol_abort(
+            "BlacsContext::buildCommunicator() --- Error in MPI_Group_incl");
     }
     MPI_Comm_create(comm_global_, subgroup, &comm_active_);
     delete[] ranks;

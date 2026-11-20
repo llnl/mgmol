@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+#include "MGmol_abort.h"
 #include "tools.h"
 
 namespace pb
@@ -25,8 +26,8 @@ FILE* open_file(const std::string& filename, const std::string& mode)
 
     if ((file_ptr = fopen(filename.data(), mode.data())) == nullptr)
     {
-        std::cout << "\n cannot open " << filename << std::endl;
-        exit(2);
+        std::cerr << "\n cannot open " << filename << std::endl;
+        mgmol_abort("cannot open file");
     }
     else
     {

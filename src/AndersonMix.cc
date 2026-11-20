@@ -18,6 +18,7 @@
 #include "Solution.h"
 #endif
 
+#include "MGmol_abort.h"
 #include <iomanip>
 #include <iostream>
 using namespace std;
@@ -190,7 +191,7 @@ void AndersonMix<T>::update(T& f, T& work, ostream& os, const bool verbose)
             if (info != 0)
             {
                 os << "AndersonMix, dpotrs: info=" << info << endl;
-                exit(0);
+                mgmol_abort();
             }
 
             for (int j = 0; j < mm_; j++)

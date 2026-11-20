@@ -11,6 +11,7 @@
 #ifndef PB_MH4_H
 #define PB_MH4_H
 
+#include "MGmol_abort.h"
 #include "PB.h"
 
 namespace pb
@@ -39,12 +40,9 @@ public:
         PB<T>::initialized_ = false;
     };
 
-    PBh4M& operator=(const PBh4M& oper)
+    PBh4M& operator=(const PBh4M& /*oper*/)
     {
-        (void)oper; // unused
-
-        std::cout << "operator= of PBh4M" << std::endl;
-        exit(2);
+        mgmol_abort("operator= of PBh4M");
         return *this;
     }
     // copy constructor

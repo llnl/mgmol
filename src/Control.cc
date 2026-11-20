@@ -1178,8 +1178,6 @@ void Control::setTolEigenvalueGram(const float tol)
                          << threshold_eigenvalue_gram_ << std::endl;
 }
 
-void Control::global_exit() { MPI_Abort(comm_global_, EXIT_FAILURE); }
-
 void Control::setSpecies(Potentials& pot)
 {
     assert(sp_.empty());

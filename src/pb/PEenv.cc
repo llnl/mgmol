@@ -11,6 +11,7 @@
 #include "PEenv.h"
 #include "tools.h"
 
+#include "MGmol_abort.h"
 #include <cassert>
 #include <stdlib.h>
 
@@ -216,9 +217,7 @@ double PEenv::double_max_all(double x) const
     int mpirc = MPI_Allreduce(&x, &out, 1, MPI_DOUBLE, MPI_MAX, comm_active_);
     if (mpirc != MPI_SUCCESS)
     {
-        std::cerr << "real_max_all:MPI_Allreduce double max failed!!!"
-                  << std::endl;
-        exit(1);
+        mgmol_abort("real_max_all:MPI_Allreduce double max failed!!!");
     }
     return out;
 }
@@ -230,9 +229,7 @@ double PEenv::double_min_all(double x) const
     int mpirc = MPI_Allreduce(&x, &out, 1, MPI_DOUBLE, MPI_MIN, comm_active_);
     if (mpirc != MPI_SUCCESS)
     {
-        std::cerr << "real_max_all:MPI_Allreduce double max failed!!!"
-                  << std::endl;
-        exit(1);
+        mgmol_abort("real_max_all:MPI_Allreduce double max failed!!!");
     }
     return out;
 }
@@ -244,9 +241,8 @@ int PEenv::int_max_all(int x)
     int mpirc = MPI_Allreduce(&x, &out, 1, MPI_INT, MPI_MAX, comm_active_);
     if (mpirc != MPI_SUCCESS)
     {
-        std::cerr << "int_max_all: MPI_Allreduce int max failed!!!"
-                  << std::endl;
-        globalExit();
+        mgmol_abort("int_max_all: MPI_Allreduce int max failed!!!");
+        ;
     }
     return out;
 }

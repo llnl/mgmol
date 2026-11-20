@@ -14,6 +14,7 @@
 #include "global.h"
 #include "memory_space.h"
 
+#include "MGmol_abort.h"
 #include <cassert>
 
 namespace
@@ -127,7 +128,7 @@ void BlockVector<ScalarType, MemorySpaceType>::allocate1NewBlock()
         (*MPIdata::sout)
             << "BlockVector::allocate1NewBlock(): size_storage_ too large!!!"
             << std::endl;
-        exit(0);
+        mgmol_abort("BlockVector::allocate1NewBlock()");
     }
 
     Control& ct = *(Control::instance());
@@ -189,7 +190,7 @@ void BlockVector<ScalarType, MemorySpaceType>::allocate_storage()
             std::cerr << "Number of allocated blocks: " << class_storage_.size()
                       << ", Cannot allocate another BlockVector!!!"
                       << std::endl;
-            exit(0);
+            mgmol_abort("BlockVector::allocate_storage()");
         }
     }
 
@@ -209,7 +210,7 @@ void BlockVector<ScalarType, MemorySpaceType>::allocate_storage()
         std::cerr << "ERROR BlockVector: trying to use allocation "
                   << size_storage_ << " bigger than initialy preallocated "
                   << allocated_size_storage_ << "!!!" << std::endl;
-        ct.global_exit();
+        mgmol_abort();
     }
     storage_ = class_storage_[my_allocation_];
     assert(class_storage_.size() > 0);
