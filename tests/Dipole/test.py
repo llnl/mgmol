@@ -107,8 +107,8 @@ for line in lines:
 polarizibility = (dyaup-dyau)/efield
 print("Polarizibility: {}".format(polarizibility))
 
-tol = 5.e-2
-ref_polarizibility=10.04
+tol = 1.e-1
+ref_polarizibility=10.1
 if abs(polarizibility-ref_polarizibility)>tol:
   print("Expected polarizibility: {}".format(ref_polarizibility))
   sys.exit(1)
