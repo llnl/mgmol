@@ -283,7 +283,7 @@ int MGmol<OrbitalsType>::dumpMDrestartFile(OrbitalsType& orbitals, Ions& ions,
 
         // write DM associated with non-extrapolated wavefunctions
         // (last computed solution of KS equations)
-        proj_matrices_->writeSavedDM(h5file);
+        if (!ct.fullyOccupied()) proj_matrices_->writeSavedDM(h5file);
     }
 
     ierr = h5file.close();
@@ -566,7 +566,7 @@ void MGmol<OrbitalsType>::md(OrbitalsType** orbitals, Ions& ions)
 
         // save DM for possible restart write
         // note: extrapolation is going to modify it!
-        if ((ct.out_restart_info > 2)
+        if ((ct.out_restart_info > 2) && !ct.fullyOccupied()
             && (((md_iteration_ % ct.checkpoint) == 0)
                 || (mdstep == ct.num_MD_steps)))
             proj_matrices_->saveDM();

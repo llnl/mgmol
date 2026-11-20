@@ -12,6 +12,7 @@
 
 #include "Grid.h"
 #include "Lap.h"
+#include "MGmol_abort.h"
 #include "MPIdata.h"
 #include "Poisson.h"
 
@@ -44,10 +45,7 @@ public:
                 nghosts = diel_flag ? 2 : 1;
                 break;
             default:
-                (*MPIdata::serr)
-                    << "GridFactory::createGrid() --- option invalid."
-                    << std::endl;
-                exit(2);
+                mgmol_abort("GridFactory::createGrid() --- option invalid");
         }
         return (new pb::Grid(origin, lattice, ngpts, myPEenv, nghosts));
     }

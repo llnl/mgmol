@@ -9,6 +9,7 @@
 
 #include "fermi.h"
 
+#include "MGmol_abort.h"
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -152,7 +153,7 @@ double compute_chemical_potential_and_occupations(
             std::cerr << "ERROR: mu1=" << mu1 << ", mu2=" << mu2 << std::endl;
             std::cerr << "ERROR: f1=" << f1 << ", f2=" << f2 << std::endl;
             std::cerr << "nel=" << nel << ", width=" << width << std::endl;
-            exit(2);
+            mgmol_abort();
         }
 
         double dmu;

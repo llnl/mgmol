@@ -10,6 +10,7 @@
 #ifndef MGMOL_OrbitalsExtrapolationFACTORY_H
 #define MGMOL_OrbitalsExtrapolationFACTORY_H
 
+#include "MGmol_abort.h"
 #include "OrbitalsExtrapolationOrder2.h"
 #include "OrbitalsExtrapolationOrder3.h"
 
@@ -29,9 +30,8 @@ public:
                 orbitals_extrapol = new OrbitalsExtrapolationOrder3<T>();
                 break;
             default:
-                (*MPIdata::serr)
-                    << "OrbitalsExtrapolation* create() --- option invalid\n";
-                exit(2);
+                mgmol_abort(
+                    "OrbitalsExtrapolation* create() --- option invalid");
         }
         return orbitals_extrapol;
     }
