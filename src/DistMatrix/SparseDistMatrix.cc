@@ -17,6 +17,8 @@
 #include "zoltan_comm_cpp.h"
 #endif
 
+#include "MGmol_abort.h"
+
 #define MEMMON 0
 
 #define SHIFT 16
@@ -626,7 +628,7 @@ void SparseDistMatrix<T>::setPartitioning(
     {
         std::cerr << "Error calling MPI_Comm_split:"
                   << " color=" << color << ", key=" << key << std::endl;
-        exit(0);
+        mgmol_abort();
     }
 }
 

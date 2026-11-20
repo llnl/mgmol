@@ -7,6 +7,7 @@
 // This file is part of MGmol. For details, see https://github.com/llnl/mgmol.
 // Please also read this link https://github.com/llnl/mgmol/LICENSE
 #include "PBh4M.h"
+#include "MGmol_abort.h"
 #include "tools.h"
 
 namespace pb
@@ -129,7 +130,7 @@ void PBh4M<T>::jacobi(GridFunc<T>& A, const GridFunc<T>& B, GridFunc<T>& W)
         if (c0 + ee[j] <= 0.)
         {
             std::cout << "c0+ee[" << j << "]=" << c0 + ee[j] << std::endl;
-            exit(1);
+            mgmol_abort("PBh4M::jacobi()");
         }
 #endif
         aa[j] -= (T)((0.75 / (c0 + (double)ee[j])) * (double)vv[j]);

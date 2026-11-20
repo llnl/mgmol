@@ -10,6 +10,7 @@
 // $Id: DielFunc.cc,v 1.13 2009/07/13 17:37:06 jeanluc Exp $
 #include "DielFunc.h"
 #include "Grid.h"
+#include "MGmol_abort.h"
 
 namespace pb
 {
@@ -121,9 +122,7 @@ void DielFunc<T>::Gepsilon_rho(GridFunc<T>& rho)
     }
     else
     {
-        std::cout << " Need a density to build dielectric function..."
-                  << std::endl;
-        exit(0);
+        mgmol_abort(" Need a density to build dielectric function...");
     }
 }
 template <class T>
@@ -184,9 +183,7 @@ void DielFunc<T>::Gepsilon_rho(GridFunc<T>& rho, const T rho0, const T drho0)
     }
     else
     {
-        std::cout << " Need a density to build dielectric function..."
-                  << std::endl;
-        exit(0);
+        mgmol_abort(" Need a density to build dielectric function...");
     }
 }
 template <class T>
@@ -249,9 +246,7 @@ void DielFunc<T>::Gdepsilon_rho(
     }
     else
     {
-        std::cout << " Need a density to build dielectric function..."
-                  << std::endl;
-        exit(0);
+        mgmol_abort(" Need a density to build dielectric function...");
     }
 }
 
@@ -313,9 +308,7 @@ void DielFunc<T>::Gdepsilon_rho(GridFunc<T>& rho, GridFunc<T>& depsilon)
     }
     else
     {
-        std::cout << " Need a density to build dielectric function..."
-                  << std::endl;
-        exit(0);
+        mgmol_abort(" Need a density to build dielectric function...");
     }
 }
 template class DielFunc<double>;

@@ -13,6 +13,7 @@
 #include <mpi.h>
 
 #include "LinearSolverMatrix.h"
+#include "MGmol_abort.h"
 #include "MPIdata.h"
 #include "PreconILU.h"
 
@@ -415,9 +416,7 @@ int PreconILU<T>::ilukC(LinearSolverMatrix<lsdatatype>& csmat_)
     /* symbolic factorization to calculate level of fill index arrays */
     if ((lofC(csmat_)))
     {
-        if (onpe0) printf("ILUK Error: lofC\n");
-        MPI_Finalize();
-        exit(0);
+        mgmol_abort("ILUK Error: lofC");
     }
     /* initialize non-zero pattern to zero */
     (*U_).initializeNonZeroPattern(0.0);
@@ -706,8 +705,7 @@ int PreconILU<T>::milut(LinearSolverMatrix<lsdatatype>& csmat_)
         if (tnorm == 0.0)
         {
             printf("Zero row encountered in MILUT - row %d \n", i);
-            MPI_Finalize();
-            exit(0);
+            mgmol_abort();
         }
         T tnorm0 = tnorm;
         tnorm /= (T)(k2 - k1 + 1);
@@ -977,8 +975,7 @@ int PreconILU<T>::ilut(LinearSolverMatrix<lsdatatype>& csmat_)
         if (tnorm == 0.0)
         {
             printf("Zero row encountered in MILUT - row %d \n", i);
-            MPI_Finalize();
-            exit(0);
+            mgmol_abort();
         }
         tnorm /= (T)(k2 - k1 + 1);
         T tolnorm = droptol_ * tnorm;

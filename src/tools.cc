@@ -18,6 +18,7 @@
 #include "SparseDistMatrix.h"
 #endif
 
+#include "MGmol_abort.h"
 #include <sys/stat.h>
 #include <time.h>
 
@@ -31,8 +32,7 @@ void noMoreMemory()
 {
     std::cerr << "Unable to satisfy request for memory for MPI task " << mype
               << std::endl;
-    Control& ct = *(Control::instance());
-    ct.global_exit();
+    mgmol_abort("Unable to satisfy request for memory");
 }
 
 // an atom name should start with a capital letter and end with a number
@@ -311,8 +311,7 @@ void exitWithErrorMessage(const std::string& name)
 {
     std::cerr << "Function " << name
               << " not implemented and should not be called!!!" << std::endl;
-    MPI_Finalize();
-    exit(0);
+    mgmol_abort();
 }
 
 bool fileExists(const char* file)

@@ -14,6 +14,7 @@
 #include "SymmetricMatrix.h"
 #include "coloring.h"
 
+#include "MGmol_abort.h"
 #include <cassert>
 #include <cstdio>
 #include <cstring>
@@ -152,9 +153,9 @@ void FunctionsPacking::getColors(
     if (ntot_orb != global_size_)
     {
         if (onpe0)
-            (*MPIdata::sout)
-                << ntot_orb << " orbitals instead of " << global_size_ << endl;
-        exit(0);
+            std::cerr << ntot_orb << " orbitals instead of " << global_size_
+                      << endl;
+        mgmol_abort();
     }
 }
 

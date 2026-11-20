@@ -217,11 +217,7 @@ void KBPsiMatrix::globalSumKBpsi(const Ions& ions)
     int mpirc = MPI_Allreduce(
         storage_, tmp, data_size, MPI_DOUBLE, MPI_SUM, myPEenv.comm());
     if (mpirc != MPI_SUCCESS)
-    {
-        (*MPIdata::serr) << "globalSumKBpsi: MPI_allreduce kbpsi failed!!!"
-                         << endl;
-        ct.global_exit(2);
-    }
+        mgmol_abort("globalSumKBpsi: MPI_allreduce kbpsi failed!!!");
 
     memcpy(storage_, tmp, data_size * sizeof(double));
     delete[] tmp;
@@ -274,11 +270,7 @@ void KBPsiMatrix::globalSumKBpsi(const Ions& ions)
             MPI_SUM, myPEenv.comm());
         allreduce_tm_.stop();
         if (mpirc != MPI_SUCCESS)
-        {
-            (*MPIdata::serr)
-                << "globalSumKBpsi: MPI_allreduce kbpsi failed!!!" << endl;
-            ct.global_exit(2);
-        }
+            mgmol_abort("globalSumKBpsi: MPI_allreduce kbpsi failed!!!");
 
         // unpack data out of MPI_Allreduce
         int idatar = 0;

@@ -12,6 +12,7 @@
 
 #include "DielFunc.h"
 #include "FDoper.h"
+#include "MGmol_abort.h"
 
 // operator -epsilon div*grad -(grad epsilon)* grad
 
@@ -74,12 +75,9 @@ public:
         initialized_ = oper.initialized();
     }
 
-    PB& operator=(const PB& oper)
+    PB& operator=(const PB& /*oper*/)
     {
-        (void)oper; // unused
-
-        std::cout << "operator= of PB!!!" << std::endl;
-        exit(2);
+        mgmol_abort("operator= of PB");
         return *this;
     }
 

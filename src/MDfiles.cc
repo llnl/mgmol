@@ -188,7 +188,6 @@ void MDfiles::printDataInFiles(vector<string>& ions_names, vector<double>& tau,
 {
     print_data_tm_.start();
 
-    Control& ct = *(Control::instance());
     // int tausize=tau.size();
     // int sumtausize;
     // MPI_Reduce(&tausize,&sumtausize,1,MPI_INT,MPI_SUM,0,sub_comm_);
@@ -238,7 +237,7 @@ void MDfiles::printDataInFiles(vector<string>& ions_names, vector<double>& tau,
             {
                 std::cerr << " Unable to open file " << coord_dir_name.data()
                           << endl;
-                ct.global_exit();
+                mgmol_abort();
             }
             // cout<<"recvbuf.size()="<<recvbuf.size()<<endl;
             // tfile<<"recvbuf.size()="<<recvbuf.size()<<endl;
@@ -281,7 +280,7 @@ void MDfiles::printDataInFiles(vector<string>& ions_names, vector<double>& tau,
             {
                 std::cerr << " Unable to open file " << wf_dir_name.data()
                           << std::endl;
-                ct.global_exit();
+                mgmol_abort();
             }
             const int na = recvbufspreads.size();
             for (int i = 0; i < na; i++)

@@ -10,6 +10,7 @@
 #include "RadialMeshFunction.h"
 #include "MPIdata.h"
 
+#include "MGmol_abort.h"
 #include <cmath>
 #include <iostream>
 #include <stdlib.h>
@@ -351,11 +352,7 @@ void RadialMeshFunction::inv_ft(const std::vector<double>& rgrid,
             break;
 
         default:
-
-            (*MPIdata::serr)
-                << "invft: angular momentum state > 2 not implemented"
-                << std::endl;
-            exit(1);
+            mgmol_abort("invft: angular momentum state > 2 not implemented");
     }
 
     double alpha = M_2_PI;
@@ -459,9 +456,9 @@ void RadialMeshFunction::compute_ft(const std::vector<double>& ggrid,
 
             default:
 
-                (*MPIdata::serr)
-                    << "rft: angular momentum " << lval << " not implemented\n";
-                exit(1);
+                std::cerr << "rft: angular momentum " << lval
+                          << " not implemented\n";
+                mgmol_abort("rft: angular momentum not implemented");
         }
 
         // Integrate work to get coeff. ik

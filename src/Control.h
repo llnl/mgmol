@@ -342,8 +342,6 @@ public:
         return pair_mlwf_distance_threshold_;
     }
 
-    void global_exit();
-
     bool Mehrstellen() const
     {
         return (lap_type_ == pb::LapType::Mehrstellen1

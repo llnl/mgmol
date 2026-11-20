@@ -11,6 +11,7 @@
 #include "Mesh.h"
 #include "Species.h"
 
+#include "MGmol_abort.h"
 #include <cstring>
 
 const double rthreshold = 1.e-5;
@@ -108,7 +109,7 @@ void KBprojectorSparse::setNLindex(
         {
             (*MPIdata::sout) << " iloc=" << iloc << ", i=" << i
                              << ", pvec=" << pvec[i] << std::endl;
-            exit(2);
+            mgmol_abort();
         }
 
         assert(pvec[i] >= iloc * lnumpt);
@@ -218,11 +219,10 @@ void KBprojectorSparse::setProjectors(const short iloc, const int icount)
                     break;
 
                 default:
-                    (*MPIdata::sout)
-                        << "KBprojectorSparse::setProjectors(): "
-                        << "Angular momentum state not implemented!!!"
-                        << std::endl;
-                    exit(1);
+                    std::cerr << "KBprojectorSparse::setProjectors(): "
+                              << "Angular momentum state not implemented!!!"
+                              << std::endl;
+                    mgmol_abort();
             }
         }
     }
@@ -351,10 +351,8 @@ void KBprojectorSparse::setSProjector(const short iloc, const int icount)
 
         if (jcount != icount)
         {
-            (*MPIdata::sout) << "KBprojectorSparse::setSProjector(): Problem "
-                                "with non-local projectors generation"
-                             << std::endl;
-            exit(2);
+            std::cerr << "KBprojectorSparse::setSProjector(): " << std::endl;
+            mgmol_abort("Problem ith non-local projectors generation");
         }
     }
 }
@@ -437,10 +435,8 @@ void KBprojectorSparse::setPProjector(const short iloc, const int icount)
 
         if (jcount != icount)
         {
-            (*MPIdata::sout)
-                << "setPProjector: Problem with non-local projector generation"
-                << std::endl;
-            exit(2);
+            mgmol_abort(
+                "setPProjector: Problem with non-local projector generation");
         }
 
     } // loop over multiplicity
@@ -543,10 +539,7 @@ void KBprojectorSparse::setDProjector(const short iloc, const int icount)
 
         if (jcount != icount)
         {
-            (*MPIdata::sout)
-                << "setDProjector: Problem with non-local generation"
-                << std::endl;
-            exit(2);
+            mgmol_abort("setDProjector: Problem with non-local generation");
         }
 
     } // loop over multiplicity
@@ -670,10 +663,7 @@ void KBprojectorSparse::setFProjector(const short iloc, const int icount)
 
         if (jcount != icount)
         {
-            (*MPIdata::sout)
-                << "setDProjector: Problem with non-local generation"
-                << std::endl;
-            exit(2);
+            mgmol_abort("setDProjector: Problem with non-local generation");
         }
 
     } // loop over multiplicity

@@ -20,6 +20,7 @@
 #include <iomanip>
 #include <iostream>
 
+#include "MGmol_abort.h"
 #include <mpi.h>
 
 const double inv64 = 1. / 64.;
@@ -649,10 +650,7 @@ int GridFunc<T>::count_threshold(const T threshold)
         int sum = 0;
         int rc  = mmpi.allreduce(&icount, &sum, 1, MPI_SUM);
         if (rc != MPI_SUCCESS)
-        {
-            std::cout << "MPI_Allreduce double sum failed!!!" << std::endl;
-            mmpi.abort();
-        }
+            mgmol_abort("MPI_Allreduce double sum failed!!!");
         icount = sum;
     }
 
@@ -3078,7 +3076,7 @@ void GridFunc<T>::test_grid_transfer()
                               << " " << iz << "]=" << uu_[iiy + iz]
                               << std::endl;
 
-                    std::exit(0);
+                    mgmol_abort();
                 }
             }
         }

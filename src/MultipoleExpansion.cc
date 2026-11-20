@@ -12,6 +12,7 @@
 #include "MultipoleExpansion.h"
 #include "MGmol_MPI.h"
 
+#include "MGmol_abort.h"
 #include <iomanip>
 
 using namespace std;
@@ -546,9 +547,7 @@ void MultipoleExpansion::expand2d(pb::GridFunc<T>& func)
                 qmoment[2] = quadrupole_moment_[3];
                 break;
             default:
-                (*MPIdata::serr)
-                    << "Invalid case for quadrupole moment" << endl;
-                exit(1);
+                mgmol_abort("Invalid case for quadrupole moment");
         }
 
         // loop over mesh points

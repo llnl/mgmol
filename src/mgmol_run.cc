@@ -122,7 +122,7 @@ int mgmol_check()
     {
         std::cerr << "Code should be called with " << myPEenv.n_mpi_tasks()
                   << " MPI tasks only" << std::endl;
-        ct.global_exit();
+        mgmol_abort();
     }
 
     assert(ct.getMGlevels() >= -1);
