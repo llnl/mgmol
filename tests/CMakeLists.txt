@@ -1,4 +1,4 @@
-find_package(PythonInterp 3.2 REQUIRED)
+find_package(Python3 3.2 REQUIRED COMPONENTS Interpreter)
 
 if(MGMOL_USE_HDF5P)
   add_executable(testHDF5P
@@ -423,7 +423,7 @@ add_test(NAME testDensityMatrix
                  ${CMAKE_CURRENT_BINARY_DIR}/testDensityMatrix)
 endif(${MGMOL_WITH_SCALAPACK})
 add_test(NAME testEnergyAndForces
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EnergyAndForces/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/EnergyAndForces/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/testEnergyAndForces
          ${CMAKE_CURRENT_SOURCE_DIR}/EnergyAndForces/mgmol.cfg
@@ -431,14 +431,14 @@ add_test(NAME testEnergyAndForces
          ${CMAKE_CURRENT_SOURCE_DIR}/EnergyAndForces/lrs.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testWFEnergyAndForces
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WFEnergyAndForces/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/WFEnergyAndForces/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/testWFEnergyAndForces
          ${CMAKE_CURRENT_SOURCE_DIR}/WFEnergyAndForces/mgmol.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/WFEnergyAndForces/sih4.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testDMandEnergyAndForces
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/DMandEnergyAndForces/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/DMandEnergyAndForces/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/testDMandEnergyAndForces
          ${CMAKE_CURRENT_SOURCE_DIR}/DMandEnergyAndForces/mgmol.cfg
@@ -446,7 +446,7 @@ add_test(NAME testDMandEnergyAndForces
          ${CMAKE_CURRENT_SOURCE_DIR}/DMandEnergyAndForces/lrs.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testRestartEnergyAndForces
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/RestartEnergyAndForces/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/RestartEnergyAndForces/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_BINARY_DIR}/testRestartEnergyAndForces
@@ -455,7 +455,7 @@ add_test(NAME testRestartEnergyAndForces
          ${CMAKE_CURRENT_SOURCE_DIR}/RestartEnergyAndForces/h2o.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testRhoVhRestart
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/RhoVhRestart/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/RhoVhRestart/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_BINARY_DIR}/testRhoVhRestart
@@ -478,7 +478,7 @@ if(${MAGMA_FOUND})
                    ${CMAKE_CURRENT_BINARY_DIR}/testReplicatedMatrix)
 else()
   add_test(NAME testProjectedMatrices
-           COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/ProjectedMatrices/test.py
+           COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/ProjectedMatrices/test.py
            ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
            ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
            ${CMAKE_CURRENT_SOURCE_DIR}/ProjectedMatrices/quenchExact.cfg
@@ -490,14 +490,14 @@ endif()
 
 #Regression tests
 add_test(NAME testSiH4
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/SiH4/testSiH4.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/SiH4/testSiH4.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/SiH4/mgmol.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/SiH4/sih4.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testOverrideCoords
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/OverrideCoords/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/OverrideCoords/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/OverrideCoords/mgmol.cfg
@@ -506,21 +506,21 @@ add_test(NAME testOverrideCoords
          ${CMAKE_CURRENT_SOURCE_DIR}/OverrideCoords/shifted.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testCl2
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Cl2_ONCVPSP_LDA/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Cl2_ONCVPSP_LDA/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/Cl2_ONCVPSP_LDA/mgmol.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/Cl2_ONCVPSP_LDA/coords.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testForcesSymmetry
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/ForcesSymmetry/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/ForcesSymmetry/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/ForcesSymmetry/mgmol.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/ForcesSymmetry/p4.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testContinuumSolvent
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/ContinuumSolvent/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/ContinuumSolvent/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/ContinuumSolvent/mgmol_diel.cfg
@@ -528,21 +528,21 @@ add_test(NAME testContinuumSolvent
          ${CMAKE_CURRENT_SOURCE_DIR}/ContinuumSolvent/lrs.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testOrder6
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Order6/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Order6/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/Order6/mgmol.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/Order6/si2.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testOrder8
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Order8/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Order8/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/Order8/mgmol.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/Order8/si2.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testPinnedMolecule
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/PinnedMolecule/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/PinnedMolecule/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/PinnedMolecule/quench.cfg
@@ -550,7 +550,7 @@ add_test(NAME testPinnedMolecule
          ${CMAKE_CURRENT_SOURCE_DIR}/PinnedMolecule/coords.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testDipole
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Dipole/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Dipole/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/Dipole/mgmol.cfg
@@ -558,7 +558,7 @@ add_test(NAME testDipole
          ${CMAKE_CURRENT_SOURCE_DIR}/Dipole/h2o.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testDipoleDriver
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/DipoleDriver/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/DipoleDriver/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_BINARY_DIR}/../drivers/computeDipole
@@ -567,56 +567,56 @@ add_test(NAME testDipoleDriver
          ${CMAKE_CURRENT_SOURCE_DIR}/DipoleDriver/h2o.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME Davidson
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Davidson/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Davidson/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/Davidson/davidson.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/Davidson/coords.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME DavidsonReplicated
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Davidson/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Davidson/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/DavidsonReplicated/davidson.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/Davidson/coords.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME DavidsonMixing
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/DavidsonMixing/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/DavidsonMixing/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/DavidsonMixing/davidson.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/DavidsonMixing/sih4.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME SimplePreconditioner
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/SimplePreconditioner/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/SimplePreconditioner/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/SimplePreconditioner/mgmol.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/SimplePreconditioner/si8.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME LocalPotentials
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/LocalPotentials/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/LocalPotentials/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/LocalPotentials/davidson.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/LocalPotentials/li2.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME PolakRibiere
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/PolakRibiere/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/PolakRibiere/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/PolakRibiere/mgmol.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/PolakRibiere/sih4.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testSpinO2
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/SpinO2/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/SpinO2/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/SpinO2/mgmol_spin1.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/SpinO2/coords.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testSpinO2LDA
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/SpinO2LDA/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/SpinO2LDA/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/SpinO2LDA/mgmol.cfg
@@ -624,7 +624,7 @@ add_test(NAME testSpinO2LDA
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 if(${MGMOL_WITH_SCALAPACK})
 add_test(NAME testMVP
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MVP/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MVP/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/MVP/mvp.cfg
@@ -632,21 +632,21 @@ add_test(NAME testMVP
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 endif(${MGMOL_WITH_SCALAPACK})
 add_test(NAME testMVPReplicated
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MVP/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MVP/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/MVPReplicated/mvp.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/MVP/coords.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testMVPmix
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MVPmix/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MVPmix/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/MVPmix/mgmol.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/MVPmix/h2o.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME BandGapN2
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/BandGapN2/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/BandGapN2/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/BandGapN2/mgmol.cfg
@@ -654,14 +654,14 @@ add_test(NAME BandGapN2
          ${CMAKE_CURRENT_SOURCE_DIR}/BandGapN2/lrs.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testMLWF
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MLWF/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MLWF/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/MLWF/mlwf.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/MLWF/coords.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testSpreadPenalty
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/SpreadPenalty/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/SpreadPenalty/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/SpreadPenalty/mgmol.cfg
@@ -669,21 +669,21 @@ add_test(NAME testSpreadPenalty
          ${CMAKE_CURRENT_SOURCE_DIR}/SpreadPenalty/lrs.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME HMVP
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/HMVP/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/HMVP/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/HMVP/mgmol.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/HMVP/F.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME HMVPmix
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/HMVPmix/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/HMVPmix/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/HMVPmix/mgmol.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/HMVPmix/h2o.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME NonAufbau
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/NonAufbau/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/NonAufbau/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/NonAufbau/mgmol.cfg
@@ -691,7 +691,7 @@ add_test(NAME NonAufbau
          ${CMAKE_CURRENT_SOURCE_DIR}/NonAufbau/h2o.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME ReplicatedSP2
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/ReplicatedSP2/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/ReplicatedSP2/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/ReplicatedSP2/mgmol.cfg
@@ -699,14 +699,14 @@ add_test(NAME ReplicatedSP2
          ${CMAKE_CURRENT_SOURCE_DIR}/ReplicatedSP2/lrs.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testMD_NoRestart
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MD_NoRestart/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MD_NoRestart/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/MD_NoRestart/mgmol.cfg
          ${CMAKE_CURRENT_SOURCE_DIR}/MD_NoRestart/coords.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testMD_D72
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MD_D72/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MD_D72/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 5 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/MD_D72/mgmol_quench.cfg
@@ -716,7 +716,7 @@ add_test(NAME testMD_D72
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 if(MGMOL_USE_HDF5P)
   add_test(NAME testHDF5single
-           COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/HDF5single/test.py
+           COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/HDF5single/test.py
            ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
            ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
            ${CMAKE_CURRENT_SOURCE_DIR}/HDF5single/mgmol.cfg
@@ -725,7 +725,7 @@ if(MGMOL_USE_HDF5P)
            ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 endif()
 add_test(NAME testMD_MVP
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MD_MVP/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/MD_MVP/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/MD_MVP/quench.cfg
@@ -733,7 +733,7 @@ add_test(NAME testMD_MVP
          ${CMAKE_CURRENT_SOURCE_DIR}/MD_MVP/li2.xyz
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testLBFGS
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/LBFGS/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/LBFGS/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/LBFGS/lbfgs1.cfg
@@ -742,7 +742,7 @@ add_test(NAME testLBFGS
          ${CMAKE_CURRENT_SOURCE_DIR}/LBFGS/lrs.in
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 add_test(NAME testFIRE
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/FIRE/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/FIRE/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/FIRE/fire1.cfg
@@ -752,7 +752,7 @@ add_test(NAME testFIRE
          ${CMAKE_CURRENT_SOURCE_DIR}/../potentials)
 if(${MGMOL_WITH_SCALAPACK})
 add_test(NAME ChebyshevMVP
-         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Chebyshev/test.py
+         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Chebyshev/test.py
          ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
          ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
          ${CMAKE_CURRENT_SOURCE_DIR}/Chebyshev/cheb.cfg
@@ -762,7 +762,7 @@ add_test(NAME ChebyshevMVP
 endif(${MGMOL_WITH_SCALAPACK})
 if(NOT ${MGMOL_WITH_MAGMA})
   add_test(NAME testShortSighted
-           COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/ShortSighted/test.py
+           COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/ShortSighted/test.py
            ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 5 ${MPIEXEC_PREFLAGS}
            ${CMAKE_CURRENT_BINARY_DIR}/../src/mgmol-opt
            ${CMAKE_CURRENT_SOURCE_DIR}/ShortSighted/quench.cfg
