@@ -1767,11 +1767,11 @@ int Ions::readAtomsFromXYZ(
 
     int natoms = -1;
 
-    std::ifstream* tfile = nullptr;
+    std::ifstream tfile;
     if (mmpi.PE0())
     {
-        tfile = new std::ifstream(filename.data(), std::ios::in);
-        if (!(*tfile))
+        tfile.open(filename.data(), std::ios::in);
+        if (!tfile)
         {
             (*MPIdata::serr)
                 << "Ions::readAtomsFromXYZ() --- ERROR: cannot open "
@@ -1780,7 +1780,7 @@ int Ions::readAtomsFromXYZ(
         else
         {
             std::string query;
-            if (getline(*tfile, query))
+            if (getline(tfile, query))
             {
                 std::stringstream na(query);
                 na >> natoms;
@@ -1801,11 +1801,11 @@ int Ions::readAtomsFromXYZ(
     if (mmpi.PE0())
     {
         std::string query;
-        getline(*tfile, query); // read comment line
+        getline(tfile, query); // read comment line
         // read atomic species and positions
         for (int ia = 0; ia < natoms; ++ia)
         {
-            if (!getline(*tfile, query))
+            if (!getline(tfile, query))
             {
                 break;
             }
@@ -1828,7 +1828,6 @@ int Ions::readAtomsFromXYZ(
             }
             ++count;
         }
-        delete tfile;
     }
 
     mmpi.bcastGlobal(&count, 1);
@@ -1948,30 +1947,36 @@ int Ions::readNatoms(const std::string& filename, const bool cell_relative)
 
     MGmol_MPI& mmpi(*(MGmol_MPI::instance()));
 
-    std::ifstream* tfile = nullptr;
+    std::ifstream file;
+    int opened_local = 1;
     if (mmpi.instancePE0())
     {
-        tfile = new std::ifstream(filename.data(), std::ios::in);
-        if (!tfile->is_open())
-        {
-            (*MPIdata::serr)
-                << " Unable to open file " << filename.data() << std::endl;
-            return -1;
-        }
-        else
+        file.open(filename.data(), std::ios::in);
+        if (file.is_open())
         {
             (*MPIdata::sout) << "Open " << filename.data() << std::endl;
         }
+        else
+        {
+            (*MPIdata::serr)
+                << " Unable to open file " << filename.data() << std::endl;
+            opened_local = 0;
+        }
     }
 
-    int nread = readNatoms(tfile, cell_relative);
+    // collective return if file opening failed
+    int opened_all = 1;
+    MPI_Allreduce(
+        &opened_local, &opened_all, 1, MPI_INT, MPI_MIN, mmpi.commGlobal());
+    if (!opened_all) return -1;
+
+    int nread = readNatoms(mmpi.instancePE0() ? &file : nullptr, cell_relative);
 
     if (mmpi.instancePE0())
     {
         if (ct.verbose > 0)
             (*MPIdata::sout) << "Close " << filename.data() << std::endl;
-        tfile->close();
-        delete tfile;
+        file.close();
     }
 
     return nread;
