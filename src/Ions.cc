@@ -22,6 +22,7 @@
 #include <cmath>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <mpi.h>
 
 Timer ions_setupInteractingIons_tm("ions_setupInteractingIons");
@@ -1901,14 +1902,17 @@ void Ions::addIonToList(const Species& sp, const std::string& name,
     MGmol_MPI& mmpi(*(MGmol_MPI::instance()));
     Control& ct(*(Control::instance()));
 
-    // create a new Ion
-    Ion* new_ion = new Ion(sp, name, &crds[0], velocity, locked);
+    // create a new Ion; the owner deletes it unless it is put in list_ions_
+    std::unique_ptr<Ion> new_ion_owner(
+        new Ion(sp, name, &crds[0], velocity, locked));
+    Ion* new_ion = new_ion_owner.get();
     // std::cout << "New Ion index = " << new_ion->index() << std::endl;
     new_ion->bcast(mmpi.commGlobal());
 
     if (inListIons(crds[0], crds[1], crds[2]))
     {
         list_ions_.push_back(new_ion);
+        new_ion_owner.release(); // list_ions_ owns it from here on
         if (ct.verbose > 2)
             (*MPIdata::sout)
                 << "Ion " << name << " at position " << crds[0] << ","
@@ -1928,11 +1932,6 @@ void Ions::addIonToList(const Species& sp, const std::string& name,
         }
         else
             (new_ion)->set_here(false);
-    }
-    else
-    {
-        // delete Ion if not put in list
-        delete new_ion;
     }
 }
 
@@ -2174,7 +2173,10 @@ int Ions::read1atom(std::ifstream* tfile, const bool cell_relative)
 #endif
 
     // Ion needs to be created by each MPI task to set global ids
-    Ion* new_ion = new Ion(species_[isp], name_read, crds, velocity, locked);
+    // (the owner deletes it unless it is put in list_ions_)
+    std::unique_ptr<Ion> new_ion_owner(
+        new Ion(species_[isp], name_read, crds, velocity, locked));
+    Ion* new_ion = new_ion_owner.get();
 
 #ifdef DEBUG
     if (onpe0) (*MPIdata::sout) << "Ion read..." << std::endl;
@@ -2184,6 +2186,7 @@ int Ions::read1atom(std::ifstream* tfile, const bool cell_relative)
     if (inListIons(crds[0], crds[1], crds[2]))
     {
         list_ions_.push_back(new_ion);
+        new_ion_owner.release(); // list_ions_ owns it from here on
         // populate local_ions_ list
         if (inLocalIons(crds[0], crds[1], crds[2]))
         {
@@ -2192,10 +2195,6 @@ int Ions::read1atom(std::ifstream* tfile, const bool cell_relative)
         }
         else
             new_ion->set_here(false);
-    }
-    else
-    {
-        delete new_ion;
     }
 
     return 1;
@@ -3052,20 +3051,23 @@ void Ions::augmentIonsData(const int nsteps, const int dir, const int disp,
     // setup buffers for data transfer
     int csize              = IonData_MaxStrLength * locSize;
     const int cbuff_size_r = IonData_MaxStrLength * maxLocSize;
-    char* cbuff            = new char[2 * cbuff_size_r];
-    char* cbuff_r          = &cbuff[cbuff_size_r];
+    std::vector<char> cbuff_storage(2 * cbuff_size_r);
+    char* cbuff   = cbuff_storage.data();
+    char* cbuff_r = cbuff + cbuff_size_r;
 
     // 7 int/atom in IonData
     int isize              = 7 * locSize + 1;
     const int ibuff_size_r = 7 * maxLocSize + 1;
-    int* ibuff             = new int[2 * ibuff_size_r];
-    int* ibuff_r           = &ibuff[ibuff_size_r];
+    std::vector<int> ibuff_storage(2 * ibuff_size_r);
+    int* ibuff   = ibuff_storage.data();
+    int* ibuff_r = ibuff + ibuff_size_r;
 
     // 16 double/atom in IonData
     int dsize              = 16 * locSize;
     const int dbuff_size_r = 16 * maxLocSize;
-    double* dbuff          = new double[2 * dbuff_size_r];
-    double* dbuff_r        = &dbuff[dbuff_size_r];
+    std::vector<double> dbuff_storage(2 * dbuff_size_r);
+    double* dbuff   = dbuff_storage.data();
+    double* dbuff_r = dbuff + dbuff_size_r;
 
     // pack data into buffers
     IonData::packIonData(cbuff, ibuff, dbuff, iondata);
@@ -3153,10 +3155,6 @@ void Ions::augmentIonsData(const int nsteps, const int dir, const int disp,
         }
         step++;
     }
-
-    delete[] cbuff;
-    delete[] ibuff;
-    delete[] dbuff;
 }
 
 void Ions::updateForcesInteractingIons()
