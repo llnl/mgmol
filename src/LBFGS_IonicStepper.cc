@@ -269,7 +269,8 @@ int LBFGS_IonicStepper::writeLBFGSinfo(HDFrestart& h5f_file)
     // Write the dataset.
     if (onpe0)
     {
-        double* u = new double[dim];
+        std::vector<double> u_buffer(dim);
+        double* u = u_buffer.data();
         memcpy(u, &work_[0], work_.size() * sizeof(double));
         memcpy(u + work_.size(), &diag_[0], gndofs_ * sizeof(double));
         memcpy(u + work_.size() + gndofs_, &xref_[0], gndofs_ * sizeof(double));
@@ -281,8 +282,6 @@ int LBFGS_IonicStepper::writeLBFGSinfo(HDFrestart& h5f_file)
             MGMOL_LBFGS_FAIL("writeLBFGSinfo(): H5Dwrite failed!!!");
             return status;
         }
-
-        delete[] u;
     }
 
     int return_status = writeDoubleAtt(dataset_id);
@@ -505,8 +504,9 @@ int LBFGS_IonicStepper::read_lbfgs(HDFrestart& h5f_file)
     last_step_accepted_ = attr_i[10];
 
     work_.resize(gndofs_ * 2 * (m_ + 1) + 2 * m_);
-    int dim   = work_.size() + 2 * gndofs_;
-    double* u = new double[dim];
+    int dim = work_.size() + 2 * gndofs_;
+    std::vector<double> u_buffer(dim);
+    double* u = u_buffer.data();
     if (onpe0)
     {
         hid_t dset_space = H5Dget_space(dataset_id);
@@ -553,7 +553,6 @@ int LBFGS_IonicStepper::read_lbfgs(HDFrestart& h5f_file)
                 << "LBFGS Warning: No reference ionic positions in restart file"
                 << std::endl;
     }
-    delete[] u;
 
     return 0;
 }
