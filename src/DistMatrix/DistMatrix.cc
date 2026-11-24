@@ -1407,7 +1407,7 @@ double DistMatrix<float>::norm(char ty)
 #else
         if (ty == 'I' || ty == 'i') lwork = m_;
         std::vector<float> work(lwork);
-        norm_val     = (double)slange(&ty, &m_, &n_, &val_[0], &m_, &work[0]);
+        norm_val = (double)slange(&ty, &m_, &n_, &val_[0], &m_, &work[0]);
 #endif
     }
     MPI_Bcast(&norm_val, 1, MPI_FLOAT, 0, comm_global_);
@@ -1431,12 +1431,14 @@ double DistMatrix<double>::pocon(char uplo, double anorm)
         assert(m_ == n_);
 
 #ifdef MGMOL_USE_SCALAPACK
-        int ione     = 1;
-        int lwork    = 2 * mloc_ + 3 * nloc_ + nb_ * std::min(npcol_, nprow_);
-        lwork        = std::max(lwork, 1);
-        int liwork   = std::max(mloc_, 1);
-        double* work = new double[lwork];
-        int* iwork   = new int[liwork];
+        int ione   = 1;
+        int lwork  = 2 * mloc_ + 3 * nloc_ + nb_ * std::min(npcol_, nprow_);
+        lwork      = std::max(lwork, 1);
+        int liwork = std::max(mloc_, 1);
+        std::vector<double> work_vec(lwork);
+        std::vector<int> iwork_vec(liwork);
+        double* work = work_vec.data();
+        int* iwork   = iwork_vec.data();
         pdpocon(&uplo, &m_, &val_[0], &ione, &ione, desc_, &anorm, &rcond, work,
             &lwork, iwork, &liwork, &info);
         if (info != 0)
@@ -1449,14 +1451,11 @@ double DistMatrix<double>::pocon(char uplo, double anorm)
             std::cerr << "liwork=" << liwork << ", but should be at least "
                       << iwork[0] << std::endl;
         }
-        delete[] iwork;
-        delete[] work;
 #else
-        double* work = new double[3 * m_];
-        int* iwork   = new int[m_];
-        dpocon(&uplo, &m_, &val_[0], &m_, &anorm, &rcond, work, iwork, &info);
-        delete[] iwork;
-        delete[] work;
+        std::vector<double> work(3 * m_);
+        std::vector<int> iwork(m_);
+        dpocon(&uplo, &m_, &val_[0], &m_, &anorm, &rcond, work.data(),
+            iwork.data(), &info);
 #endif
         if (info != 0)
         {
@@ -1477,12 +1476,14 @@ double DistMatrix<float>::pocon(char uplo, float anorm)
         assert(m_ == n_);
 
 #ifdef MGMOL_USE_SCALAPACK
-        int ione    = 1;
-        int lwork   = 2 * mloc_ + 3 * nloc_ + nb_ * std::min(npcol_, nprow_);
-        lwork       = std::max(lwork, 1);
-        int liwork  = std::max(mloc_, 1);
-        float* work = new float[lwork];
-        int* iwork  = new int[liwork];
+        int ione   = 1;
+        int lwork  = 2 * mloc_ + 3 * nloc_ + nb_ * std::min(npcol_, nprow_);
+        lwork      = std::max(lwork, 1);
+        int liwork = std::max(mloc_, 1);
+        std::vector<float> work_vec(lwork);
+        std::vector<int> iwork_vec(liwork);
+        float* work = work_vec.data();
+        int* iwork  = iwork_vec.data();
         pspocon(&uplo, &m_, &val_[0], &ione, &ione, desc_, &anorm, &rcond, work,
             &lwork, iwork, &liwork, &info);
         if (info != 0)
@@ -1495,14 +1496,11 @@ double DistMatrix<float>::pocon(char uplo, float anorm)
             std::cerr << "liwork=" << liwork << ", but should be at least "
                       << iwork[0] << std::endl;
         }
-        delete[] iwork;
-        delete[] work;
 #else
-        float* work = new float[3 * m_];
-        int* iwork  = new int[m_];
-        spocon(&uplo, &m_, &val_[0], &m_, &anorm, &rcond, work, iwork, &info);
-        delete[] iwork;
-        delete[] work;
+        std::vector<float> work(3 * m_);
+        std::vector<int> iwork(m_);
+        spocon(&uplo, &m_, &val_[0], &m_, &anorm, &rcond, work.data(),
+            iwork.data(), &info);
 #endif
         if (info != 0)
         {
@@ -2067,13 +2065,13 @@ void DistMatrix<T>::getDiagonalValues(T* const dmat) const
             }
         }
     }
+    std::vector<T> recvbuf_vec(m_);
     MGmol_MPI& mmpi = *(MGmol_MPI::instance());
-    T* recvbuf      = new T[m_];
+    T* recvbuf      = recvbuf_vec.data();
     mmpi.allreduce(dmat, recvbuf, m_, MPI_SUM);
     //  MPI_Allreduce ( dmat, recvbuf, m_,
     //                   MPI_DOUBLE, MPI_SUM, comm_global_ );
     memcpy(dmat, recvbuf, m_ * sizeof(T));
-    delete[] recvbuf;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2195,21 +2193,21 @@ void DistMatrix<double>::syev(
         int np0   = NUMROC(&nn, &mb_, &izero, &izero, &nprow_);
         int lwork = 5 * m_ + 3 * np0 + mb_ * nn + m_ * np0;
         lwork *= 2;
-        double* work = new double[lwork];
+        std::vector<double> work(lwork);
         pdsyev(&jobz, &uplo, &m_, &val_[0], &ione, &ione, desc_, &w[0],
-            &z.val_[0], &ione, &ione, z.desc_, work, &lwork, &info);
+            &z.val_[0], &ione, &ione, z.desc_, work.data(), &lwork, &info);
 #else
-        int lwork    = 3 * m_;
-        double* work = new double[lwork];
-        z            = *this;
-        dsyev(&jobz, &uplo, &m_, &z.val_[0], &m_, &w[0], work, &lwork, &info);
+        int lwork = 3 * m_;
+        std::vector<double> work(lwork);
+        z = *this;
+        dsyev(&jobz, &uplo, &m_, &z.val_[0], &m_, &w[0], work.data(), &lwork,
+            &info);
 #endif
         if (info != 0)
         {
             MGMOL_DISTMATRIX_ERROR(
                 "syev, object " << object_name_ << ", info=" << info);
         }
-        delete[] work;
     }
 
 #ifdef MGMOL_USE_SCALAPACK
@@ -2233,21 +2231,21 @@ void DistMatrix<float>::syev(
         int np0   = NUMROC(&nn, &mb_, &izero, &izero, &nprow_);
         int lwork = 5 * m_ + 3 * np0 + mb_ * nn + m_ * np0;
         lwork *= 2;
-        float* work = new float[lwork];
+        std::vector<float> work(lwork);
         pssyev(&jobz, &uplo, &m_, &val_[0], &ione, &ione, desc_, &w[0],
-            &z.val_[0], &ione, &ione, z.desc_, work, &lwork, &info);
+            &z.val_[0], &ione, &ione, z.desc_, work.data(), &lwork, &info);
 #else
-        int lwork   = 3 * m_;
-        float* work = new float[lwork];
-        z           = *this;
-        ssyev(&jobz, &uplo, &m_, &z.val_[0], &m_, &w[0], work, &lwork, &info);
+        int lwork = 3 * m_;
+        std::vector<float> work(lwork);
+        z = *this;
+        ssyev(&jobz, &uplo, &m_, &z.val_[0], &m_, &w[0], work.data(), &lwork,
+            &info);
 #endif
         if (info != 0)
         {
             MGMOL_DISTMATRIX_ERROR(
                 "syev, object " << object_name_ << ", info=" << info);
         }
-        delete[] work;
     }
 
 #ifdef MGMOL_USE_SCALAPACK
@@ -2264,26 +2262,23 @@ void DistMatrix<double>::gesvd(char jobu, char jobvt, std::vector<double>& s,
     {
         assert(m_ == n_);
 
-#ifdef MGMOL_USE_SCALAPACK
-        assert(mb_ > 1);
-        int ione  = 1;
         int lwork = -1;
         double qwork[1];
+#ifdef MGMOL_USE_SCALAPACK
+        assert(mb_ > 1);
+        int ione = 1;
         pdgesvd(&jobu, &jobvt, &m_, &n_, &val_[0], &ione, &ione, desc_, &s[0],
             &u.val_[0], &ione, &ione, u.desc_, &vt.val_[0], &ione, &ione,
             vt.desc_, &qwork[0], &lwork, &info);
-        lwork        = qwork[0];
-        double* work = new double[lwork];
+        lwork = qwork[0];
+        std::vector<double> work(lwork);
         pdgesvd(&jobu, &jobvt, &m_, &n_, &val_[0], &ione, &ione, desc_, &s[0],
             &u.val_[0], &ione, &ione, u.desc_, &vt.val_[0], &ione, &ione,
-            vt.desc_, work, &lwork, &info);
+            vt.desc_, work.data(), &lwork, &info);
 #else
-        int lwork = -1;
-        double qwork[1];
         dgesvd(&jobu, &jobvt, &m_, &n_, &val_[0], &m_, &s[0], &u.val_[0], &m_,
             &vt.val_[0], &n_, qwork, &lwork, &info);
-        lwork        = qwork[0];
-        double* work = new double[lwork];
+        lwork = qwork[0];
         dgesvd(&jobu, &jobvt, &m_, &n_, &val_[0], &m_, &s[0], &u.val_[0], &m_,
             &vt.val_[0], &n_, qwork, &lwork, &info);
 #endif
@@ -2292,7 +2287,6 @@ void DistMatrix<double>::gesvd(char jobu, char jobvt, std::vector<double>& s,
             MGMOL_DISTMATRIX_ERROR(
                 "gesvd, object " << object_name_ << ", info=" << info);
         }
-        delete[] work;
     }
 
 #ifdef MGMOL_USE_SCALAPACK
@@ -2318,18 +2312,17 @@ void DistMatrix<float>::gesvd(char jobu, char jobvt, std::vector<float>& s,
         psgesvd(&jobu, &jobvt, &m_, &n_, &val_[0], &ione, &ione, desc_, &s[0],
             &u.val_[0], &ione, &ione, u.desc_, &vt.val_[0], &ione, &ione,
             vt.desc_, &qwork[0], &lwork, &info);
-        lwork       = qwork[0];
-        float* work = new float[lwork];
+        lwork = qwork[0];
+        std::vector<float> work(lwork);
         psgesvd(&jobu, &jobvt, &m_, &n_, &val_[0], &ione, &ione, desc_, &s[0],
             &u.val_[0], &ione, &ione, u.desc_, &vt.val_[0], &ione, &ione,
-            vt.desc_, work, &lwork, &info);
+            vt.desc_, work.data(), &lwork, &info);
 #else
         int lwork = -1;
         float qwork[1];
         sgesvd(&jobu, &jobvt, &m_, &n_, &val_[0], &m_, &s[0], &u.val_[0], &m_,
             &vt.val_[0], &n_, qwork, &lwork, &info);
-        lwork       = qwork[0];
-        float* work = new float[lwork];
+        lwork = qwork[0];
         sgesvd(&jobu, &jobvt, &m_, &n_, &val_[0], &m_, &s[0], &u.val_[0], &m_,
             &vt.val_[0], &n_, qwork, &lwork, &info);
 #endif
@@ -2338,7 +2331,6 @@ void DistMatrix<float>::gesvd(char jobu, char jobvt, std::vector<float>& s,
             MGMOL_DISTMATRIX_ERROR(
                 "gesvd, object " << object_name_ << ", info=" << info);
         }
-        delete[] work;
     }
 
 #ifdef MGMOL_USE_SCALAPACK
