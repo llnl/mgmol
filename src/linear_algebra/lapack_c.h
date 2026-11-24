@@ -35,6 +35,8 @@ extern "C"
         const int* const, double*, const int* const, int*);
     void DGETRF(int*, int*, double*, int*, int*, int*);
     void DGETRS(Pchar, int*, int*, double*, int*, int*, double*, int*, int*);
+    void DGESVD(Pchar, Pchar, int*, int*, double*, int*, double*, double*, int*,
+        double*, int*, double*, int*, int*);
     void dpocon(Pchar, const int* const, double*, const int* const, double*,
         double*, double*, const int* const, int*);
     void dtrtrs(Pchar, Pchar, Pchar, const int* const, const int* const,
