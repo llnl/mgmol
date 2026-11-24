@@ -843,7 +843,10 @@ int ExtendedGridOrbitals<ScalarType>::read_func_hdf5(
     // memory dataspace identifier
     hid_t memspace = (h5f_file.active()) ? h5f_file.createMemspace() : 0;
 
-    ScalarType* buffer = new ScalarType[block[0] * block[1] * block[2]];
+    // freed automatically, including on the early error returns below
+    std::unique_ptr<ScalarType[]> buffer_owner(
+        new ScalarType[block[0] * block[1] * block[2]]);
+    ScalarType* buffer = buffer_owner.get();
 
     if (onpe0 && ct.verbose > 2)
     {
@@ -919,7 +922,6 @@ int ExtendedGridOrbitals<ScalarType>::read_func_hdf5(
 #endif
     }
 
-    delete[] buffer;
     resetIterativeIndex();
 
     if (h5f_file.active())

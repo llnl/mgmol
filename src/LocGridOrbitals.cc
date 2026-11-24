@@ -1252,7 +1252,10 @@ int LocGridOrbitals<ScalarType>::read_func_hdf5(
     hid_t memspace = H5P_DEFAULT;
     if (h5f_file.active()) memspace = h5f_file.createMemspace();
 
-    ScalarType* buffer = new ScalarType[block[0] * block[1] * block[2]];
+    // freed automatically, including on the early error returns below
+    std::unique_ptr<ScalarType[]> buffer_owner(
+        new ScalarType[block[0] * block[1] * block[2]]);
+    ScalarType* buffer = buffer_owner.get();
 
     if (onpe0 && ct.verbose > 2)
     {
@@ -1420,7 +1423,6 @@ int LocGridOrbitals<ScalarType>::read_func_hdf5(
 
     } // end loop over centers_in_dataset
 
-    delete[] buffer;
     resetIterativeIndex();
 
     if (h5f_file.active())
