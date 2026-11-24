@@ -943,6 +943,98 @@ void Potentials::initBackground()
     if (fabs(background_charge_) < 1.e-10) background_charge_ = 0.;
 }
 
+void Potentials::evalIonDensityOnSamplePts(Ions& ions,
+    const std::vector<int>& local_idx, std::vector<RHODTYPE>& sampled_rhoc)
+{
+    Mesh* mymesh           = Mesh::instance();
+    MGmol_MPI& mmpi        = *(MGmol_MPI::instance());
+    const pb::Grid& mygrid = mymesh->grid();
+
+    const char flag_filter = pot_type(0);
+    if (flag_filter == 's')
+    {
+        if (onpe0)
+        {
+            std::cout << "Potentials::evalIonDensityOnSamplePts - flag_filter "
+                         "s is not supported"
+                      << std::endl;
+        }
+        mmpi.abort();
+    }
+
+    // initialize output vector
+    sampled_rhoc.resize(local_idx.size());
+    for (int d = 0; d < sampled_rhoc.size(); d++)
+        sampled_rhoc[d] = 0.0;
+
+    // Loop over ions
+    for (auto& ion : ions.overlappingVL_ions())
+    {
+        const Species& sp(ion->getSpecies());
+
+        Vector3D position(ion->position(0), ion->position(1), ion->position(2));
+
+        initializeRadialDataOnSampledPts(position, sp, local_idx, sampled_rhoc);
+    }
+
+    return;
+}
+
+void Potentials::initializeRadialDataOnSampledPts(const Vector3D& position,
+    const Species& sp, const std::vector<int>& local_idx,
+    std::vector<RHODTYPE>& sampled_rhoc)
+{
+    assert(local_idx.size() == sampled_rhoc.size());
+
+    Control& ct = *(Control::instance());
+
+    Mesh* mymesh           = Mesh::instance();
+    const pb::Grid& mygrid = mymesh->grid();
+
+    const int dim0 = mygrid.dim(0);
+    const int dim1 = mygrid.dim(1);
+    const int dim2 = mygrid.dim(2);
+
+    const double start0 = mygrid.start(0);
+    const double start1 = mygrid.start(1);
+    const double start2 = mygrid.start(2);
+
+    const double h0 = mygrid.hgrid(0);
+    const double h1 = mygrid.hgrid(1);
+    const double h2 = mygrid.hgrid(2);
+
+    Vector3D point(0., 0., 0.);
+
+    const double lrad = sp.lradius();
+
+    const RadialInter& lpot(sp.local_pot());
+    const Vector3D lattice(mygrid.ll(0), mygrid.ll(1), mygrid.ll(2));
+
+    for (int k = 0; k < local_idx.size(); k++)
+    {
+        /*
+            local_idx provides offset.
+            offset = iz + iy * dim2 + ix * dim1 * dim2;
+            evaluate x,y,z indices backward.
+        */
+        int iz = local_idx[k] % dim2;
+        int ix = local_idx[k] / dim2;
+        int iy = ix % dim1;
+        ix /= dim1;
+
+        /* compute grid point position */
+        point[0] = start0 + ix * h0;
+        point[1] = start1 + iy * h1;
+        point[2] = start2 + iz * h2;
+
+        /* accumulate ion species density */
+        const double r = position.minimage(point, lattice, ct.bcPoisson);
+        if (r < lrad) sampled_rhoc[k] += sp.getRhoComp(r);
+    }
+
+    return;
+}
+
 int Potentials::read(HDFrestart& h5f_file)
 {
     Control& ct = *(Control::instance());

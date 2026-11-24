@@ -1,0 +1,47 @@
+#!/bin/tcsh
+#SBATCH -N 1
+#SBATCH -t 0:10:00
+#SBATCH -p pdebug
+
+date
+
+setenv OMP_NUM_THREADS 1
+#setenv KMP_DETERMINISTIC_REDUCTION 1
+
+set ncpus = 8
+
+set maindir = /p/lustre2/cheung26/mgmol
+
+setenv LD_LIBRARY_PATH ${maindir}/build_quartz/libROM/build/lib:$LD_LIBRARY_PATH
+
+set exe     = ${maindir}/build_quartz/libROM/build/examples/misc/combine_samples
+
+set snapshot_files = ""
+set bondlength_min = 0.95
+set bondlength_max = 1.05
+set bondlength_num_increments = 2
+set bondangle_min = -5.0 
+set bondangle_max = 5.0
+set bondangle_num_increments = 2
+
+foreach i (`seq 0 $bondlength_num_increments`)
+  set bondlength_one = `echo "scale=2; $bondlength_min + $i * ($bondlength_max - $bondlength_min) / ($bondlength_num_increments)" | bc`
+  set bondlength_one = `printf "%.2f" $bondlength_one` 
+  foreach j (`seq 0 $i`)
+    set bondlength_two = `echo "scale=2; $bondlength_min + $j * ($bondlength_max - $bondlength_min) / ($bondlength_num_increments)" | bc`
+    set bondlength_two = `printf "%.2f" $bondlength_two`
+    foreach k (`seq 0 $bondangle_num_increments`)
+      set bondangle = `echo "scale=1; $bondangle_min + $k * ($bondangle_max - $bondangle_min) / ($bondangle_num_increments)" | bc`
+      set bondangle = `printf "%.1f" $bondangle`
+      echo "bondlength1: $bondlength_one, bondlength2: $bondlength_two, bondangle: $bondangle"
+      set tag = ${bondlength_one}_${bondlength_two}_${bondangle}
+      set snapshot_files = "$snapshot_files data/${tag}/orbital_snapshot"
+    end
+  end
+end
+echo "Snapshot files: $snapshot_files"
+
+set basis_file = "data/PinnedH2O_3DOF_orbitals_basis_${bondlength_num_increments}_${bondangle_num_increments}"
+srun -n $ncpus $exe -f $basis_file $snapshot_files > data/basis_${bondlength_num_increments}_${bondangle_num_increments}_PinnedH2O_3DOF.out
+
+date

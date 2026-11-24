@@ -1,0 +1,34 @@
+#!/bin/tcsh
+#SBATCH -N 1
+#SBATCH -t 1:00:00
+#SBATCH -p pdebug
+
+date
+
+setenv OMP_NUM_THREADS 1
+#setenv KMP_DETERMINISTIC_REDUCTION 1
+
+set ncpus = 1
+
+set maindir = /p/lustre2/cheung26/mgmol
+
+setenv LD_LIBRARY_PATH ${maindir}/build_quartz/libROM/build/lib:$LD_LIBRARY_PATH
+
+set exe     = mgmol-opt
+
+cp $maindir/install_quartz/bin/$exe .
+
+set increment_md_steps = 1
+set num_md_steps = 50
+set basis_file = PinnedH2O_orbitals_basis_${increment_md_steps}_${num_md_steps}
+
+set cfg_rom = mgmol_rom_${increment_md_steps}_${num_md_steps}.cfg
+
+ln -s -f $maindir/potentials/pseudo.O_ONCV_PBE_SG15 .
+ln -s -f $maindir/potentials/pseudo.H_ONCV_PBE_SG15 .
+
+source $maindir/scripts/modules.quartz
+
+srun -n $ncpus $exe -c $cfg_rom -i coords.in > rom_${increment_md_steps}_${num_md_steps}_PinnedH2O.out
+
+date
