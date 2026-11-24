@@ -45,6 +45,42 @@ void rotateSym(ReplicatedMatrix& mat, const ReplicatedMatrix& rotation_matrix,
     mat.gemm('t', 'n', 1., rotation_matrix, work, 0.);
 }
 
+void getProcrustesTransform(ReplicatedMatrix& q, ReplicatedMatrix& yyt)
+{
+    const bool onpe0 = ReplicatedMatrix::onpe0_;
+
+    if (onpe0) std::cout << "getProcrustesTransform()" << std::endl;
+
+    const int nst    = q.m();
+    const double tol = 0.5;
+
+    ReplicatedMatrix z("z", nst, nst);
+    ReplicatedMatrix yt("yt", nst, nst);
+
+    std::vector<double> eigenvalues(nst);
+
+    // get z and yt
+    q.gesvd('V', 'V', eigenvalues, z, yt);
+    if (onpe0)
+    {
+        std::cout << "Procrustes: Small singular values: ";
+        for (int i = 0; i < nst; i++)
+            if (eigenvalues[i] < tol) std::cout << "  " << eigenvalues[i];
+        std::cout << std::endl;
+    }
+
+    // get q=z*yt
+    q.gemm('n', 'n', 1., z, yt, 0.);
+
+    // now calculate yyt matrix
+    std::vector<double> diag(nst);
+    for (int i = 0; i < nst; i++)
+        diag[i] = (eigenvalues[i] < tol) ? 0. : 1.;
+    ReplicatedMatrix gamma("Gamma", diag.data(), nst);
+    z.gemm('t', 'n', 1., yt, gamma, 0.);
+    yyt.gemm('n', 'n', 1., z, yt, 0.);
+}
+
 ReplicatedMatrix::ReplicatedMatrix(
     const std::string name, const int m, const int n)
     : dim_(m),
@@ -628,6 +664,74 @@ void ReplicatedMatrix::syev(
         std::cerr << "ReplicatedMatrix::syev() failed, info = " << info
                   << std::endl;
     // for(auto& d : evals)std::cout<<d<<std::endl;
+}
+
+// singular value decomposition: (*this) = u * diag(s) * vt
+// (the content of this matrix is destroyed)
+void ReplicatedMatrix::gesvd(const char jobu, const char jobvt,
+    std::vector<double>& s, ReplicatedMatrix& u, ReplicatedMatrix& vt)
+{
+    assert(u.dim_ == dim_);
+    assert(vt.dim_ == dim_);
+    assert(static_cast<int>(s.size()) >= dim_);
+
+    // 'V' (compute the min(m,n) first vectors) is used with ScaLAPACK,
+    // but it is 'S' for LAPACK and MAGMA
+    const char ju  = (jobu == 'V' || jobu == 'v') ? 'S' : jobu;
+    const char jvt = (jobvt == 'V' || jobvt == 'v') ? 'S' : jobvt;
+
+    int info;
+#ifdef HAVE_MAGMA
+    magma_vec_t magma_jobu  = magma_vec_const(ju);
+    magma_vec_t magma_jobvt = magma_vec_const(jvt);
+
+    auto& magma_singleton = MagmaSingleton::get_magma_singleton();
+
+    // the CPU interface of MAGMA is used: copy data from GPU to CPU
+    std::vector<double> a_host(dim_ * dim_);
+    std::vector<double> u_host(dim_ * dim_);
+    std::vector<double> vt_host(dim_ * dim_);
+    magma_dgetmatrix(dim_, dim_, data_.get(), ld_, a_host.data(), dim_,
+        magma_singleton.queue_);
+
+    magma_int_t lwork = -1;
+    double qwork;
+    magma_dgesvd(magma_jobu, magma_jobvt, dim_, dim_, a_host.data(), dim_,
+        s.data(), u_host.data(), dim_, vt_host.data(), dim_, &qwork, lwork,
+        &info);
+    lwork = static_cast<magma_int_t>(qwork);
+    std::vector<double> work(lwork);
+    magma_dgesvd(magma_jobu, magma_jobvt, dim_, dim_, a_host.data(), dim_,
+        s.data(), u_host.data(), dim_, vt_host.data(), dim_, work.data(), lwork,
+        &info);
+
+    // copy results back to GPU
+    magma_dsetmatrix(dim_, dim_, u_host.data(), dim_, u.data_.get(), u.ld_,
+        magma_singleton.queue_);
+    magma_dsetmatrix(dim_, dim_, vt_host.data(), dim_, vt.data_.get(), vt.ld_,
+        magma_singleton.queue_);
+#else
+    int ld   = ld_;
+    int ldu  = u.ld_;
+    int ldvt = vt.ld_;
+
+    // query optimal size of workspace
+    int lwork = -1;
+    double qwork;
+    DGESVD(&ju, &jvt, &dim_, &dim_, data_.get(), &ld, s.data(), u.data_.get(),
+        &ldu, vt.data_.get(), &ldvt, &qwork, &lwork, &info);
+    if (info == 0)
+    {
+        lwork = static_cast<int>(qwork);
+        std::vector<double> work(lwork);
+        DGESVD(&ju, &jvt, &dim_, &dim_, data_.get(), &ld, s.data(),
+            u.data_.get(), &ldu, vt.data_.get(), &ldvt, work.data(), &lwork,
+            &info);
+    }
+#endif
+    if (info != 0)
+        std::cerr << "ReplicatedMatrix::gesvd() failed, info = " << info
+                  << std::endl;
 }
 
 void ReplicatedMatrix::sygst(int itype, char uplo, const ReplicatedMatrix& b)

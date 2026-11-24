@@ -39,6 +39,8 @@ class ReplicatedMatrix
 public:
     friend class ReplicatedVector;
 
+    friend void getProcrustesTransform(ReplicatedMatrix&, ReplicatedMatrix&);
+
     static void setMPIcomm(MPI_Comm comm)
     {
         comm_ = comm;
@@ -123,6 +125,11 @@ public:
         const ReplicatedMatrix& a, const ReplicatedMatrix& b,
         const double beta);
     void syev(char, char, std::vector<double>&, ReplicatedMatrix&);
+    // singular value decomposition: (*this) = u * diag(s) * vt
+    // jobu and jobvt can be 'V' (as for DistMatrix), 'S', 'A' or 'N'
+    // the content of (*this) is destroyed
+    void gesvd(const char jobu, const char jobvt, std::vector<double>& s,
+        ReplicatedMatrix& u, ReplicatedMatrix& vt);
     void sygst(int, char, const ReplicatedMatrix&);
 
     void setVal(const int i, const int j, const double val);
@@ -144,5 +151,10 @@ public:
 };
 
 void rotateSym(ReplicatedMatrix&, const ReplicatedMatrix&, ReplicatedMatrix&);
+
+// Replace q by the orthogonal matrix closest to q (in the Frobenius norm),
+// and compute in yyt the projector onto the right singular vectors of q
+// associated with singular values larger than 0.5
+void getProcrustesTransform(ReplicatedMatrix& q, ReplicatedMatrix& yyt);
 
 #endif

@@ -116,6 +116,19 @@ add_executable(testPowerDistMatrix
                ${CMAKE_SOURCE_DIR}/src/tools/random.cc
                ${CMAKE_SOURCE_DIR}/tests/ut_main.cc)
 endif(${MGMOL_WITH_SCALAPACK})
+add_executable(testReplicatedProcrustes
+               ${CMAKE_SOURCE_DIR}/tests/testReplicatedProcrustes.cc
+               ${CMAKE_SOURCE_DIR}/src/LocalMatrices2ReplicatedMatrix.cc
+               ${CMAKE_SOURCE_DIR}/src/ReplicatedMatrix.cc
+               ${CMAKE_SOURCE_DIR}/src/local_matrices/LocalMatrices.cc
+               ${CMAKE_SOURCE_DIR}/src/local_matrices/SquareLocalMatrices.cc
+               ${CMAKE_SOURCE_DIR}/src/magma_singleton.cc
+               ${CMAKE_SOURCE_DIR}/src/linear_algebra/gemm_impl.cc
+               ${CMAKE_SOURCE_DIR}/src/linear_algebra/mputils.cc
+               ${CMAKE_SOURCE_DIR}/src/linear_algebra/syrk_impl.cc
+               ${CMAKE_SOURCE_DIR}/src/tools/Timer.cc
+               ${CMAKE_SOURCE_DIR}/src/tools/random.cc
+               ${CMAKE_SOURCE_DIR}/tests/ut_main.cc)
 add_executable(testDirectionalReduce
                ${CMAKE_SOURCE_DIR}/tests/testDirectionalReduce.cc
                ${CMAKE_SOURCE_DIR}/src/sparse_linear_algebra/DirectionalReduce.cc
@@ -380,6 +393,9 @@ add_test(NAME testPowerDistMatrix
 add_test(NAME testPower
          COMMAND ${CMAKE_CURRENT_BINARY_DIR}/testPower)
 endif(${MGMOL_WITH_SCALAPACK})
+add_test(NAME testReplicatedProcrustes
+         COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
+                 ${CMAKE_CURRENT_BINARY_DIR}/testReplicatedProcrustes)
 add_test(NAME testDirectionalReduce
          COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
                  ${CMAKE_CURRENT_BINARY_DIR}/testDirectionalReduce)
@@ -825,6 +841,8 @@ if(${MAGMA_FOUND})
     MPI::MPI_CXX OpenMP::OpenMP_CXX PkgConfig::MAGMA)
   target_link_libraries(testReplicatedMatrix PRIVATE
     MPI::MPI_CXX OpenMP::OpenMP_CXX PkgConfig::MAGMA)
+  target_link_libraries(testReplicatedProcrustes PRIVATE
+    MPI::MPI_CXX OpenMP::OpenMP_CXX PkgConfig::MAGMA)
   target_link_libraries(testPower PRIVATE ${BLAS_LIBRARIES} ${SCALAPACK_LIBRARIES}
     MPI::MPI_CXX OpenMP::OpenMP_CXX PkgConfig::MAGMA)
   target_link_libraries(testPowerDistMatrix PRIVATE ${BLAS_LIBRARIES}
@@ -879,6 +897,8 @@ else()
     target_link_libraries(testDensityMatrix PRIVATE ${SCALAPACK_LIBRARIES}
       ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} MPI::MPI_CXX OpenMP::OpenMP_CXX)
   endif(${MGMOL_WITH_SCALAPACK})
+  target_link_libraries(testReplicatedProcrustes PRIVATE ${LAPACK_LIBRARIES}
+    ${BLAS_LIBRARIES} MPI::MPI_CXX OpenMP::OpenMP_CXX)
   target_link_libraries(testAndersonMix PRIVATE ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} 
     MPI::MPI_CXX OpenMP::OpenMP_CXX)
   target_link_libraries(testVariableSizeMatrix PRIVATE ${BLAS_LIBRARIES} 
