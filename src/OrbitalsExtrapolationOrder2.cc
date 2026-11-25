@@ -24,7 +24,7 @@ void OrbitalsExtrapolationOrder2<OrbitalsType>::extrapolate_orbitals(
     Control& ct = *(Control::instance());
 
 #ifdef MGMOL_USE_SCALAPACK
-    bool use_dense_proj_mat = false;
+    bool align_orbitals = false;
     if (ct.OuterSolver() != OuterSolverType::ABPG
         && ct.OuterSolver() != OuterSolverType::NLCG)
     {
@@ -33,10 +33,9 @@ void OrbitalsExtrapolationOrder2<OrbitalsType>::extrapolate_orbitals(
         if (dynamic_cast<
                 ProjectedMatrices<dist_matrix::DistMatrix<DISTMATDTYPE>>*>(
                 proj_matrices))
-            use_dense_proj_mat = true;
+            align_orbitals = true;
     }
 #endif
-
     new_orbitals->assign(**orbitals);
 
     // do the extrapolation if previous orbitals exist (not at first step)
@@ -44,13 +43,16 @@ void OrbitalsExtrapolationOrder2<OrbitalsType>::extrapolate_orbitals(
     {
         OrbitalsType* orbitals_minus1
             = OrbitalsExtrapolation<OrbitalsType>::orbitals_minus1_;
-        if (ct.verbose > 1 && onpe0)
+        if (ct.verbose > 0 && onpe0)
             (*MPIdata::sout) << "Extrapolate orbitals order 2..." << std::endl;
 
             // align orbitals_minus1_ with new_orbitals
 #ifdef MGMOL_USE_SCALAPACK
-        if (use_dense_proj_mat)
+        if (align_orbitals)
         {
+            if (ct.verbose > 0 && onpe0)
+                (*MPIdata::sout)
+                    << "Align orbitals from previous step..." << std::endl;
             dist_matrix::DistMatrix<DISTMATDTYPE> matQ("Q", ct.numst, ct.numst);
             orbitals_minus1->computeGram(*new_orbitals, matQ);
 
@@ -60,9 +62,11 @@ void OrbitalsExtrapolationOrder2<OrbitalsType>::extrapolate_orbitals(
 
             orbitals_minus1->multiply_by_matrix(matQ, 0., *orbitals_minus1);
             orbitals_minus1->axpy((ORBDTYPE)-1., *new_orbitals);
-            orbitals_minus1->multiply_by_matrix(yyt, 0., *orbitals_minus1);
+            // note (jlf 11/25/26): following line does not seem to help. To be
+            // investigated
+            // orbitals_minus1->multiply_by_matrix(yyt, 0., *orbitals_minus1);
         }
-        else // !use_dense_proj_mat
+        else // !align_orbitals
 #endif
         {
             new_orbitals->scal(2.);
